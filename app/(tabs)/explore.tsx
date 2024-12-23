@@ -1,4 +1,6 @@
-import { StyleSheet, Image, Platform } from 'react-native';
+
+
+/*import { StyleSheet, Image, Platform } from 'react-native';
 
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -106,4 +108,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-});
+});*/

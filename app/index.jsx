@@ -1,6 +1,8 @@
 import { View, Text ,StyleSheet,ImageBackground} from 'react-native'
 import React from 'react'
 import populus from "@/assets/images/populus.png"
+import {Link} from 'expo-router'
+
 const app = () => {
   return (
     <View style={styles.container}>
