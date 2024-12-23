@@ -1,4 +1,42 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { View, Text ,StyleSheet,ImageBackground} from 'react-native'
+import React from 'react'
+import populus from "@/assets/images/populus.png"
+const app = () => {
+  return (
+    <View style={styles.container}>
+      <ImageBackground source={populus} 
+      resizeMode="cover"
+      style={styles.image}>
+      <Text style={styles.text}>Populus</Text>
+      </ImageBackground>
+    </View>
+  )
+}
+
+export default app
+
+const styles = StyleSheet.create({
+  container:{
+    flex: 1,
+    flexDirection: 'column',
+  },
+  text:{
+    color: 'black',
+    fontSize: 2,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  image:{
+    width: '100%',
+    height: '100%',
+    fles: 1,
+    resizeMode: 'cover',
+    justifyContent:'center',
+  }
+})
+
+
+/*import { Image, StyleSheet, Platform } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -20,7 +58,7 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Nishana </ThemedText>
+        <ThemedText type="subtitle">Step 1: Ready </ThemedText>
         <ThemedText>
           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
           Press{' '}.
@@ -74,3 +112,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
+*/
