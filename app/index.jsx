@@ -1,4 +1,4 @@
-import { View, Text ,StyleSheet,ImageBackground} from 'react-native'
+import { View, Text ,StyleSheet,ImageBackground,Pressable} from 'react-native'
 import React from 'react'
 import populus from "@/assets/images/populus.png"
 import {Link} from 'expo-router'
@@ -9,7 +9,12 @@ const app = () => {
       <ImageBackground source={populus} 
       resizeMode="cover"
       style={styles.image}>
-      <Text style={styles.text}>Populus</Text>
+      <Text style={styles.title}>Populus</Text>
+
+      <Link href="/contact" style={{marginHorizontal: 'auto'}} asChild>
+      <Pressable style={styles.button}>
+       <Text style={styles.buttonText}>Explore Here</Text> 
+        </Pressable></Link>
       </ImageBackground>
     </View>
   )
@@ -22,8 +27,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
   },
-  text:{
-    color: 'black',
+  title:{
+    color: 'white',
     fontSize: 2,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -34,6 +39,28 @@ const styles = StyleSheet.create({
     fles: 1,
     resizeMode: 'cover',
     justifyContent:'center',
+  },
+  link:{
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    padding: 4,
+  },
+  button:{
+    height: 60,
+    borderRadius: 20,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    padding: 6,
+  },
+  buttonText:{
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    padding: 4,
   }
 })
 
