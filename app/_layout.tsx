@@ -28,7 +28,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'light' ? DarkTheme : DefaultTheme}>
       <Stack>
         {/* <Stack.Screen
           name="(resident)"
@@ -38,8 +38,7 @@ export default function RootLayout() {
           }}
         /> */}
         <Stack.Screen name="index" options={{title: "index",headerShown:false}}/>
-        <Stack.Screen name="contact" options={{title: "contact"}}/>
-        <Stack.Screen name="home" options={{title: "home"}}/>
+        
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
