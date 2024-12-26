@@ -1,145 +1,84 @@
-import { View, Text ,StyleSheet,ImageBackground,Pressable} from 'react-native'
-import React from 'react'
-import populus from "@/assets/images/populus.png"
-import {Link} from 'expo-router'
-import home from "@/app/(resident)/home.jsx"
-import profile from "@/app/(resident)/profile.jsx"
+import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import home from "@/app/(resident)/home.jsx";
+import message from "@/app/(resident)/message.jsx";
+import map from "@/app/(resident)/map.jsx";
+import survey from "@/app/(resident)/survey.jsx";
+import Icon1 from "react-native-vector-icons/Octicons";
+import { Foundation, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
+
 
 const Tab = createBottomTabNavigator();
 
-const app = () => {
-  return (
-    <View style={styles.container}>
-   <Tab.Navigator>
-      <Tab.Screen name="Home" component={home} />
-      <Tab.Screen name="Profile" component={profile} />
-    </Tab.Navigator>
-      <Text style={styles.title}>Hello</Text>
-    </View>
-    
-  )
-}
+const App = () => {
+  const tabConfig=[
+    {
+      name: "Map",
+      component: map,
+      focusedIcon: 'home-map-marker',
+      unfocusedIcon: 'home-map-marker',
+      iconComponent: MaterialCommunityIcons
+    },
+    {
+      name: "Home",
+      component: home,
+      focusedIcon: 'home',
+      unfocusedIcon: 'home',
+      iconComponent: Foundation
+    },
+    {
+      name: "Survey",
+      component: survey,
+      focusedIcon: 'google-analytics',
+      unfocusedIcon: 'google-analytics',
+      iconComponent: MaterialCommunityIcons
+    },
+    {
+      name: "Message",
+      component: message,
+      focusedIcon: 'message-text',
+      unfocusedIcon: 'message-text',
+      iconComponent: MaterialCommunityIcons
+    },
+  ]
+const screenOptions=({route})=>({
+  tabBarIcon:({focused,color,size})=>{
+    const routeConfig = tabConfig.find(config => config.name == route.name);
+    const iconName = focused
+    ? routeConfig.focusedIcon
+    : routeConfig.unfocusedIcon;
+    const IconComponent =  routeConfig.iconComponent;
 
-export default app
-
-const styles = StyleSheet.create({
-  container:{
-    flex: 1,
-    flexDirection: 'column',
+    return <IconComponent name={iconName} size={size} color={color}/>
   },
-  title:{
-    color: 'white',
-    fontSize: 2,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  image:{
-    width: '100%',
-    height: '100%',
-    fles: 1,
-    resizeMode: 'cover',
-    justifyContent:'center',
-  },
-  link:{
-    color: 'white',
-    fontSize: 40,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-    padding: 4,
-  },
-  button:{
-    height: 60,
-    borderRadius: 20,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(16, 46, 83, 0.75) 0.75)',
-    padding: 6,
-  },
-  buttonText:{
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    padding: 4,
-  }
-})
-
-
-/*import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome Populus!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Ready </ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}.
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools. 
-          Okayy be ready.
-          Lets start
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  
+    tabBarActiveTintColor: 	'#4682B4',
+    tabBarInactiveTintColor:'black',
+    tabBarLabelStyle: {
+      fontSize: 14,
+      paddingBottom: 5,
+      fontWeight: "600",
+    },
+    tabBarStyle: {
+      height : 60,
+      paddingTop: 0,
+    },
 });
-*/
+
+  return (
+    <Tab.Navigator
+      screenOptions={screenOptions}>
+      <Tab.Screen name="Map" component={map} />
+      <Tab.Screen name="Home" component={home} />
+      <Tab.Screen name="Survey" component={survey} />
+      <Tab.Screen name="Message" component={message} />
+    </Tab.Navigator>
+  );
+};
+
+export default App;
+
+const styles = StyleSheet.create({
+  // Your styles here
+});
