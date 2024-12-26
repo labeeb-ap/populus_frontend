@@ -2,21 +2,22 @@ import { View, Text ,StyleSheet,ImageBackground,Pressable} from 'react-native'
 import React from 'react'
 import populus from "@/assets/images/populus.png"
 import {Link} from 'expo-router'
+import home from "@/app/(resident)/home.jsx"
+import profile from "@/app/(resident)/profile.jsx"
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+const Tab = createBottomTabNavigator();
 
 const app = () => {
   return (
     <View style={styles.container}>
-      <ImageBackground source={populus} 
-      resizeMode="cover"
-      style={styles.image}>
-      <Text style={styles.title}>Populus</Text>
-
-      <Link href="/contact" style={{marginHorizontal: 'auto'}} asChild>
-      <Pressable style={styles.button}>
-       <Text style={styles.buttonText}>Explore Here</Text> 
-        </Pressable></Link>
-      </ImageBackground>
+   <Tab.Navigator>
+      <Tab.Screen name="Home" component={home} />
+      <Tab.Screen name="Profile" component={profile} />
+    </Tab.Navigator>
+      <Text style={styles.title}>Hello</Text>
     </View>
+    
   )
 }
 
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
   },
   link:{
     color: 'white',
-    fontSize: 20,
+    fontSize: 40,
     fontWeight: 'bold',
     textAlign: 'center',
     textDecorationLine: 'underline',
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 20,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(16, 46, 83, 0.75) 0.75)',
     padding: 6,
   },
   buttonText:{
