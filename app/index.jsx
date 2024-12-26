@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import home from "@/app/(resident)/home.jsx";
 import message from "@/app/(resident)/message.jsx";
 import map from "@/app/(resident)/map.jsx";
 import survey from "@/app/(resident)/survey.jsx";
-import Icon1 from "react-native-vector-icons/Octicons";
 import { Foundation, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
 
 
@@ -62,18 +62,22 @@ const screenOptions=({route})=>({
     },
     tabBarStyle: {
       height : 60,
+      backgroundColor: '#f8f8f8',
       paddingTop: 0,
     },
+    
 });
 
   return (
-    <Tab.Navigator
-      screenOptions={screenOptions}>
-      <Tab.Screen name="Map" component={map} />
-      <Tab.Screen name="Home" component={home} />
-      <Tab.Screen name="Survey" component={survey} />
-      <Tab.Screen name="Message" component={message} />
-    </Tab.Navigator>
+    
+      <Tab.Navigator
+        screenOptions={screenOptions}>
+        <Tab.Screen name="Map" component={map} options={{headerTitleAlign:"center"}} />
+        <Tab.Screen name="Home" component={home} options={{headerTitleAlign:"center"}}/>
+        <Tab.Screen name="Survey" component={survey} options={{headerTitleAlign:"center"}} />
+        <Tab.Screen name="Message" component={message} options={{headerTitleAlign:"center"}}/>
+      </Tab.Navigator>
+ 
   );
 };
 
