@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
 import home from "@/app/(resident)/home.jsx";
 import message from "@/app/(resident)/message.jsx";
 import map from "@/app/(resident)/map.jsx";
