@@ -58,6 +58,9 @@ const TabLayout = () => {
             return <IconComponent name={icon} size={size} color={color} />;
           },
           headerTitleAlign: "center",
+          tabBarStyle:{
+            backgroundColor:'#161622'
+          }
         };
       }}
     >
