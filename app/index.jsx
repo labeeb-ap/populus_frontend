@@ -6,12 +6,12 @@ import { Redirect } from 'expo-router';
 
 export default function App() {
   return (
-    <View style={styles.container} >
-      <Text>Populus</Text>
-      <StatusBar style="auto"/>
-      <Link href="/home" style={ {color : 'blue'}}>Go to Home</Link>
-    </View>
-    // <Redirect href="/sign" />
+    // <View style={styles.container} >
+    //   <Text>Populus</Text>
+    //   <StatusBar style="auto"/>
+    //   <Link href="/home" style={ {color : 'blue'}}>Go to Home</Link>
+    // </View>
+    <Redirect href="/sign_in" />
   );
 }
 
