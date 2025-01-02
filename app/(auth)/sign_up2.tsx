@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, TextInput, Button, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 
@@ -34,23 +34,67 @@ export default function App() {
 
 const SignUp2 = ({ mappedHouse }: { mappedHouse: string }) => {
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    rationId: '',
+    photo: '',
+    mappedHouse,
+  });
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/user/resident_signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Success:', data);
+        Alert.alert('Success', 'Registration completed successfully.');
+        router.push('/success');
+      } else {
+        const errorData = await response.json();
+        console.error('Error:', errorData);
+        Alert.alert('Error', errorData.message || 'Something went wrong.');
+      }
+    } catch (error) {
+      console.error('Network Error:', error);
+      Alert.alert('Error', 'Unable to connect to the server.');
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TextInput style={styles.input} placeholder="Ration ID" />
-      <TextInput style={styles.input} placeholder="Upload photo" />
+      <TextInput
+        style={styles.input}
+        placeholder="Ration ID"
+        value={formData.rationId}
+        onChangeText={(text) => handleChange('rationId', text)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Upload photo"
+        value={formData.photo}
+        onChangeText={(text) => handleChange('photo', text)}
+      />
       <TextInput
         style={styles.input}
         placeholder="Map your house"
-        value={mappedHouse} // Display the latitude and longitude
-        editable={false} // Make the field non-editable
+        value={formData.mappedHouse}
+        editable={false} // Non-editable since it's auto-filled
       />
       <View style={styles.buttonContainer}>
-        <Button
-          title="Sign Up"
-          onPress={() => router.push('/success')}
-          color="#003366"
-        />
+        <Button title="Sign Up" onPress={handleSubmit} color="#003366" />
       </View>
     </ScrollView>
   );
