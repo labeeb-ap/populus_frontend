@@ -19,7 +19,7 @@ const SignIn = () => {
 
   const handleSignUp = () => {
     // Navigate to the /sign_up route
-    router.push('/sign_up2');
+    router.push('/sign_up');
   };
 
   return (
