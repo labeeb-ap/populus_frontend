@@ -11,7 +11,6 @@ interface FormData {
   name: string;
   dateOfBirth: string;
   gender: string;
-  isKeralite: string;
   houseDetails: string;
   place: string;
   locality: string;
@@ -36,7 +35,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ mappedHouse, setMappedHouse }) 
     name: '',
     dateOfBirth: '',
     gender: '',
-    isKeralite: '',
     houseDetails: '',
     place: '',
     locality: '',
@@ -133,12 +131,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ mappedHouse, setMappedHouse }) 
         value={formData.gender}
         onChangeText={(value) => handleInputChange('gender', value)}
       />
-      <TextInput 
-        style={styles.input} 
-        placeholder="Keralite / Non Keralite"
-        value={formData.isKeralite}
-        onChangeText={(value) => handleInputChange('isKeralite', value)}
-      />
+      
       <TextInput 
         style={styles.input} 
         placeholder="House No/Name"
