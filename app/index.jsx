@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import {Link} from 'expo-router';  
 import { Redirect } from 'expo-router';
 
+
 export default function App() {
   return (
     // <View style={styles.container} >

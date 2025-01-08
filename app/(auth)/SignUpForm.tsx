@@ -4,6 +4,8 @@ import { View, TextInput, Button, StyleSheet, ScrollView, Alert } from 'react-na
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import MapScreen from './MapScreen';
+import { API_URL } from '@/constants/constants';
+
 
 interface FormData {
   name: string;
@@ -59,10 +61,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ mappedHouse, setMappedHouse }) 
       [field]: value
     }));
   };
+  
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://192.168.198.138:4000/user/resident_signup', {
+      const response = await fetch(`${API_URL}/user/resident_signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
