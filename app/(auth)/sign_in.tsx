@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,65 +6,127 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router'; // Import useRouter
+import { useRouter } from 'expo-router';
+import { API_URL } from '@/constants/constants';
+import { Feather } from '@expo/vector-icons';
 
 const SignIn = () => {
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Navigate to the /home route
-    router.push('/home');
-  };
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
 
-  const handleSignUp = () => {
-    // Navigate to the /sign_up route
-    router.push('/sign_up');
+    try {
+      setIsLoading(true);
+      // console.log('Request URL:', `${API_URL}/user/resident_login`);
+      // console.log('Request Body:', { username, password });
+
+      const response = await fetch(`${API_URL}/user/resident_login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      // const responseText = await response.text();
+      // console.log('Raw Response:', responseText);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+      if (data.success && data.token) {
+        // Store the token here if needed
+        // await AsyncStorage.setItem('userToken', data.token);
+        
+        router.replace('/home');
+      } else {
+        throw new Error('Invalid response format');
+      }
+      
+    } catch (error: unknown) {
+      const err = error as Error;
+      Alert.alert(
+        'Error',
+        err.message || 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.languageText}>English (India)</Text>
 
-      {/* Logo */}
       <Image
         source={require('@/assets/images/LLogo.png')}
         style={styles.logo}
       />
 
-      {/* Email and Password Input */}
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Username"
         placeholderTextColor="#999"
-        keyboardType="email-address"
+        value={username}
+        onChangeText={setUsername}
+        autoCapitalize="none"
+        autoCorrect={false}
       />
+
       <View style={styles.passwordContainer}>
         <TextInput
-          style={[styles.input, { flex: 1 }]}
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
           placeholder="Password"
           placeholderTextColor="#999"
-          secureTextEntry={true}
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
         />
-        <TouchableOpacity>
-          <Text style={styles.showText}>Show</Text>
+        <TouchableOpacity
+          style={styles.eyeIcon}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Feather
+            name={showPassword ? 'eye' : 'eye-off'}
+            size={20}
+            color="#999"
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginText}>Log In</Text>
+      <TouchableOpacity
+        style={[styles.loginButton, isLoading && styles.disabledButton]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginText}>Log In</Text>
+        )}
       </TouchableOpacity>
 
-      {/* Forgot Password */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => {}} disabled={isLoading}>
         <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
       </TouchableOpacity>
 
-      {/* Create New Account */}
       <TouchableOpacity
         style={styles.createAccountButton}
-        onPress={handleSignUp}
+        onPress={() => router.push('/sign_up')}
+        disabled={isLoading}
       >
         <Text style={styles.createAccountText}>Create new account</Text>
       </TouchableOpacity>
@@ -108,11 +170,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  showText: {
-    marginRight: 10,
-    color: '#007bff',
-    fontWeight: '600',
-  },
   loginButton: {
     width: '100%',
     height: 50,
@@ -121,6 +178,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     marginVertical: 15,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   loginText: {
     color: '#fff',
@@ -147,10 +207,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footerText: {
-    marginTop: 30,
+    position: 'absolute',
+    bottom: 20,
     color: '#1b1b7e',
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    height: '100%',
+    justifyContent: 'center',
   },
 });
 
