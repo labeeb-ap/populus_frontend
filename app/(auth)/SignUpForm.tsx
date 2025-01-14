@@ -406,7 +406,11 @@ const SignUpForm: React.FC = () => {
             <Button
               title="Submit"
               onPress={handleSubmit}
-              disabled={Object.keys(errors).length > 0}
+              disabled={
+                !formData.username || 
+                !formData.password || 
+                Object.keys(errors).some(key => key !== 'photo' && errors[key])
+              }
               color="#003366"
             />
           </View>

@@ -1,11 +1,11 @@
 import { View, Text } from 'react-native';
 import React from 'react';
-import { Foundation, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Foundation, MaterialCommunityIcons,FontAwesome6 } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 // Importing your screens
 import Home from "@/app/(tabs)/home";
-import Message from "@/app/(tabs)/message";
+import Profile from "@/app/(tabs)/profile";
 import Map from "@/app/(tabs)/map";
 import Survey from "@/app/(tabs)/survey";
 
@@ -35,11 +35,11 @@ const tabConfig = [
     iconComponent: MaterialCommunityIcons
   },
   {
-    name: "Message",
-    component: Message,
-    focusedIcon: 'message-text',
-    unfocusedIcon: 'message-text',
-    iconComponent: MaterialCommunityIcons
+    name: "profile",
+    component: Profile,
+    focusedIcon: 'house-user',
+    unfocusedIcon: 'house-user',
+    iconComponent: FontAwesome6
   }
 ];
 
@@ -55,7 +55,7 @@ const TabLayout = () => {
         return {
           tabBarIcon: ({ focused, color, size }) => {
             const icon = focused ? iconName : routeConfig?.unfocusedIcon;
-            return <IconComponent name={icon} size={size} color={color} />;
+            return <IconComponent name={icon as any} size={size} color={color} />;
           },
           tabBarStyle:{
             backgroundColor:'#161622'
@@ -69,7 +69,7 @@ const TabLayout = () => {
           key={tab.name}
           name={tab.name}
           component={tab.component}
-          options={{ headerTitleAlign: "center" }}
+          options={{ headerShown:false }}
         />
       ))}
     </Tab.Navigator>
