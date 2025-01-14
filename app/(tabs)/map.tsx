@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/constants';
 
+
 interface LocationData {
   _id: string;
   name: string;
@@ -87,7 +88,7 @@ function Map() {
                 },
                 title: `House ${index + 1}`,
                 description: `${item.name}'s House`,
-                houseDetails: item.houseDetails || 'No house details available'
+                houseDetails: item.houseDetails || 'No house details available',
               };
             } catch (err) {
               console.error(`Error processing item ${index}:`, err);
@@ -119,7 +120,7 @@ function Map() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View >
         <Text>Loading map data...</Text>
       </View>
     );
@@ -127,7 +128,7 @@ function Map() {
 
   if (error) {
     return (
-      <View style={styles.centered}>
+      <View >
         <Text>Error: {error}</Text>
       </View>
     );
@@ -139,95 +140,65 @@ function Map() {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={initialRegion}
-        showsUserLocation={true}
+        showsUserLocation={false}
         showsMyLocationButton={true}
         showsCompass={true}
         showsScale={true}
+        mapType="hybrid"
       >
         {locations.map((marker: FormattedLocation) => (
           <Marker
             key={marker.id}
             coordinate={marker.coordinate}
-            image={require('@/assets/images/custom-marker.png')}
+            anchor={{ x: 2, y: 2 }} // Adjust the anchor point for positioning
           >
-            <View style={styles.markerContainer}>
-              <View style={styles.labelContainer}>
-                <Text style={styles.labelText} numberOfLines={2} ellipsizeMode="tail">
-                  {marker.houseDetails}
-                </Text>
+            <View style={{ alignItems: 'center' }}>
+              <Image
+                source={require('@/assets/images/custom-marker.png')}
+                style={{ width: 10, height: 10, resizeMode: 'contain' }} // Resize the image here
+              />
+              <View style={styles.markerTextContainer}>
+                <Text style={styles.markerText}>{marker.houseDetails}</Text>
               </View>
             </View>
-            <Callout>
-              <View style={styles.calloutContainer}>
-                <Text style={styles.calloutTitle}>{marker.title}</Text>
-                <Text style={styles.calloutDetails}>{marker.description}</Text>
-                <Text style={styles.calloutHouseDetails}>
-                  House Details: {marker.houseDetails}
-                </Text>
-              </View>
-            </Callout>
           </Marker>
         ))}
       </MapView>
     </View>
+  
   );
+  
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  markerContainer: {
-    alignItems: 'center',
-    width: 150,
-  },
-  labelContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginTop: 35, // Added space for the marker image
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    container: {
+      flex: 1,
+      backgroundColor: '#f0f0f0', // Neutral background to highlight the map
+      justifyContent: 'center',
+      alignItems: 'center',
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  labelText: {
-    fontSize: 10,
-    textAlign: 'center',
-    color: '#333',
-  },
-  calloutContainer: {
-    width: 200,
-    padding: 10,
-  },
-  calloutTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  calloutDetails: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  calloutHouseDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-});
+    
+    map: {
+      ...StyleSheet.absoluteFillObject, // Ensures the map fills the screen
+    },
+    markerTextContainer: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
+      borderRadius: 8,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: '#d4d4d4', // Light border for better visibility
+    },
+    markerText: {
+      color: 'blue', // Dark red text color
+      fontSize: 15, // Slightly smaller font size for better fit
+      fontWeight: 'bold', // Bold for emphasis
+      textAlign: 'center', // Center align the text
+    },
+  });
+      
+      
 
 export default Map;
