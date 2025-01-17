@@ -4,10 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 
-// Define props for the Announcement component
 interface AnnouncementProps {
   department: string;
   time: string;
@@ -17,50 +18,70 @@ interface AnnouncementProps {
 
 export default function Home() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>POPULUS</Text>
-        <View style={styles.headerIcons}>
-          <FontAwesome name="exclamation-circle" size={24} color="red" />
-          <FontAwesome name="envelope" size={24} color="black" style={{ marginLeft: 10 }} />
-          <Text style={styles.notificationBadge}>6</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.logoText}>POPULUS</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconButton}>
+              <FontAwesome name="exclamation-circle" size={24} color="#DC3545" />
+            </TouchableOpacity>
+            <View style={styles.notificationContainer}>
+              <TouchableOpacity style={styles.iconButton}>
+                <FontAwesome name="envelope" size={24} color="#2C3E50" />
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.badgeText}>6</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Weather Widget */}
-      <View style={styles.weatherWidget}>
-        <Text style={styles.temperature}>19°</Text>
-        <Text style={styles.city}>Montreal, Canada</Text>
-        <Text style={styles.weather}>Mid Rain</Text>
-      </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Weather Widget */}
+        <View style={styles.weatherWidget}>
+          <View style={styles.weatherContent}>
+            <View>
+              <Text style={styles.temperature}>19°</Text>
+              <Text style={styles.weather}>Mid Rain</Text>
+            </View>
+            <View style={styles.weatherInfo}>
+              <Text style={styles.city}>Montreal, Canada</Text>
+              <FontAwesome name="cloud-rain" size={40} color="#4A6572" />
+            </View>
+          </View>
+        </View>
 
-      {/* Announcements */}
-      <ScrollView style={styles.announcements}>
-        <Announcement
-          department="Police Department"
-          time="10:00 am"
-          title="🚨 Traffic Alert 🚨"
-          message="Road closure on Main St. from 3rd Ave to 5th Ave due to an ongoing investigation. Please use alternate routes. Updates will be shared as available."
-        />
-        <Announcement
-          department="Health Department"
-          time="10:00 am"
-          title="Attention:"
-          message="The Health Department advises all residents to take precautions during the flu season. Please get vaccinated, wash your hands frequently, and stay home if you feel unwell."
-        />
-        <Announcement
-          department="Local government"
-          time="10:00 am"
-          title="Notice to All Residents:"
-          message="The local government urges everyone to properly dispose of waste and maintain hygiene to prevent the spread of diseases. Ensure water storage is covered."
-        />
+        {/* Announcements Section */}
+        <View style={styles.announcementsSection}>
+          <Text style={styles.sectionTitle}>Recent Announcements</Text>
+          
+          <Announcement
+            department="Police Department"
+            time="10:00 am"
+            title="🚨 Traffic Alert 🚨"
+            message="Road closure on Main St. from 3rd Ave to 5th Ave due to an ongoing investigation. Please use alternate routes. Updates will be shared as available."
+          />
+          <Announcement
+            department="Health Department"
+            time="10:00 am"
+            title="Attention:"
+            message="The Health Department advises all residents to take precautions during the flu season. Please get vaccinated, wash your hands frequently, and stay home if you feel unwell."
+          />
+          <Announcement
+            department="Local government"
+            time="10:00 am"
+            title="Notice to All Residents:"
+            message="The local government urges everyone to properly dispose of waste and maintain hygiene to prevent the spread of diseases. Ensure water storage is covered."
+          />
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
-// Announcement Component with Props
 const Announcement: React.FC<AnnouncementProps> = ({
   department,
   time,
@@ -68,14 +89,30 @@ const Announcement: React.FC<AnnouncementProps> = ({
   message,
 }) => (
   <View style={styles.announcement}>
-    <Text style={styles.department}>{department}</Text>
-    <Text style={styles.time}>{time}</Text>
-    <Text style={styles.title}>{title}</Text>
+    <View style={styles.announcementHeader}>
+      <View style={styles.departmentContainer}>
+        <Text style={styles.department}>{department}</Text>
+        <Text style={styles.time}>{time}</Text>
+      </View>
+      <TouchableOpacity style={styles.moreButton}>
+        <FontAwesome name="ellipsis-v" size={16} color="#4A6572" />
+      </TouchableOpacity>
+    </View>
+    <Text style={styles.announcementTitle}>{title}</Text>
     <Text style={styles.message}>{message}</Text>
     <View style={styles.reactionIcons}>
-      <FontAwesome name="thumbs-up" size={24} color="black" />
-      <FontAwesome name="thumbs-down" size={24} color="black" style={{ marginLeft: 10 }} />
-      <FontAwesome name="comment" size={24} color="black" style={{ marginLeft: 10 }} />
+      <TouchableOpacity style={styles.reactionButton}>
+        <FontAwesome name="thumbs-up" size={20} color="#4A6572" />
+        <Text style={styles.reactionCount}>24</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.reactionButton}>
+        <FontAwesome name="thumbs-down" size={20} color="#4A6572" />
+        <Text style={styles.reactionCount}>2</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.reactionButton}>
+        <FontAwesome name="comment" size={20} color="#4A6572" />
+        <Text style={styles.reactionCount}>8</Text>
+      </TouchableOpacity>
     </View>
   </View>
 );
@@ -83,79 +120,168 @@ const Announcement: React.FC<AnnouncementProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8F9FA",
   },
   header: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E9ECEF",
+  },
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10,
-    backgroundColor: "#f5f5f5",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
+  logoText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2C3E50",
+    letterSpacing: 1,
   },
   headerIcons: {
     flexDirection: "row",
     alignItems: "center",
   },
+  iconButton: {
+    padding: 8,
+    marginLeft: 10,
+  },
+  notificationContainer: {
+    position: "relative",
+  },
   notificationBadge: {
     position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: "red",
-    color: "white",
-    borderRadius: 10,
-    padding: 2,
+    backgroundColor: "#DC3545",
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  badgeText: {
+    color: "#FFFFFF",
     fontSize: 12,
+    fontWeight: "600",
+  },
+  content: {
+    flex: 1,
   },
   weatherWidget: {
-    backgroundColor: "#d1c4e9",
+    margin: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     padding: 20,
-    borderRadius: 10,
-    margin: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  weatherContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   temperature: {
     fontSize: 48,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#2C3E50",
   },
   city: {
     fontSize: 18,
+    color: "#4A6572",
+    fontWeight: "500",
+    marginBottom: 8,
   },
   weather: {
     fontSize: 16,
-    color: "gray",
+    color: "#6C757D",
+    fontWeight: "500",
   },
-  announcements: {
-    flex: 1,
+  weatherInfo: {
+    alignItems: "flex-end",
+  },
+  announcementsSection: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#2C3E50",
+    marginBottom: 16,
   },
   announcement: {
-    backgroundColor: "#f0f0f0",
-    margin: 10,
-    padding: 10,
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  announcementHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  departmentContainer: {
+    flex: 1,
   },
   department: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#2C3E50",
+    marginBottom: 4,
   },
   time: {
-    fontSize: 12,
-    color: "gray",
+    fontSize: 13,
+    color: "#6C757D",
   },
-  // title: {
-  //   fontSize: 16,
-  //   fontWeight: "bold",
-  //   marginTop: 5,
-  // },
+  moreButton: {
+    padding: 4,
+  },
+  announcementTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2C3E50",
+    marginBottom: 8,
+  },
   message: {
     fontSize: 14,
-    marginTop: 5,
+    color: "#4A6572",
+    lineHeight: 20,
+    marginBottom: 16,
   },
   reactionIcons: {
     flexDirection: "row",
-    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E9ECEF",
+    paddingTop: 12,
+  },
+  reactionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 24,
+  },
+  reactionCount: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#6C757D",
+    fontWeight: "500",
   },
 });

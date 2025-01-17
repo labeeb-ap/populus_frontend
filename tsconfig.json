@@ -1,19 +1,39 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "target": "esnext",
+    "module": "commonjs",
+    "jsx": "react-native",
+    "lib": [
+      "es2017"
+    ],
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     "**/*.jsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "app/(tabs)/contact.jsx" //"app/(tabs)/index.jsx" 
- ]
+    "expo-env.d.ts",
+    "app/(tabs)/contact.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js"
+  ],
+  "extends": "expo/tsconfig.base"
 }

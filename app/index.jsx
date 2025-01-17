@@ -12,7 +12,7 @@ export default function App() {
     //   <StatusBar style="auto"/>
     //   <Link href="/home" style={ {color : 'blue'}}>Go to Home</Link>
     // </View>
-    <Redirect href="/map" />
+    <Redirect href="/sign_in" />
   );
 }
 

@@ -22,6 +22,7 @@ interface FormData {
   mappedHouse: string;
   username: string;
   password: string;
+  isOwnerHome: string; 
 }
 
 interface ValidationErrors {
@@ -64,6 +65,7 @@ const SignUpForm: React.FC = () => {
     mappedHouse: '',
     username: '',
     password: '',
+    isOwnerHome: '' ,
   });
 
   const validateField = (field: keyof FormData, value: any): string => {
@@ -89,6 +91,8 @@ const SignUpForm: React.FC = () => {
       case 'password':
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
         return !passwordRegex.test(value) ? 'Password must be 8 characters with letters, numbers, and special characters' : '';
+      case 'isOwnerHome':
+          return !value ? 'Please specify if this is the ration card owner\'s home' : '';
       default:
         return '';
     }
@@ -243,27 +247,43 @@ const SignUpForm: React.FC = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {currentStep === 1 && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your full name"
-            value={formData.name}
-            onChangeText={value => handleInputChange('name', value)}
-          />
-          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+    <ScrollView style={styles.scrollView}>
+    <View style={styles.container}>
+      <Text style={styles.formTitle}>
+        {currentStep === 1 ? 'Personal Information' : 'Account Setup'}
+      </Text>
+      <View style={styles.progressBar}>
+        <View style={[styles.progressIndicator, { width: `${(currentStep/2) * 100}%` }]} />
+      </View>
+      <Text style={styles.stepIndicator}>Step {currentStep} of 2</Text>
 
-          <TouchableOpacity
-            style={styles.input}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text>
-              {formData.dateOfBirth
-                ? formData.dateOfBirth.toLocaleDateString()
-                : 'Select Date of Birth'}
-            </Text>
-          </TouchableOpacity>
+      {currentStep === 1 && (
+        <View style={styles.formSection}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChangeText={value => handleInputChange('name', value)}
+              placeholderTextColor="#666"
+            />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Date of Birth</Text>
+            <TouchableOpacity
+              style={[styles.input, styles.dateInput]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.dateText}>
+                {formData.dateOfBirth
+                  ? formData.dateOfBirth.toLocaleDateString()
+                  : 'Select Date of Birth'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {showDatePicker && (
             <DateTimePicker
@@ -276,186 +296,345 @@ const SignUpForm: React.FC = () => {
             />
           )}
 
-          <Picker
-            selectedValue={formData.gender}
-            onValueChange={value => handleInputChange('gender', value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select Gender" value="" />
-            <Picker.Item label="Male" value="male" />
-            <Picker.Item label="Female" value="female" />
-            <Picker.Item label="Others" value="others" />
-          </Picker>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.gender}
+                onValueChange={value => handleInputChange('gender', value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Gender" value="" />
+                <Picker.Item label="Male" value="male" />
+                <Picker.Item label="Female" value="female" />
+                <Picker.Item label="Others" value="others" />
+              </Picker>
+            </View>
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="House No/Name"
-            value={formData.houseDetails}
-            onChangeText={value => handleInputChange('houseDetails', value)}
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>House Details</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="House No/Name"
+              value={formData.houseDetails}
+              onChangeText={value => handleInputChange('houseDetails', value)}
+              placeholderTextColor="#666"
+            />
+          </View>
 
-          <Picker
-            selectedValue={formData.district}
-            onValueChange={value => handleInputChange('district', value)}
-            style={styles.picker}
-          >
-            {KERALA_DISTRICTS.map(district => (
-              <Picker.Item key={district} label={district} value={district} />
-            ))}
-          </Picker>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Location Details</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.district}
+                onValueChange={value => handleInputChange('district', value)}
+                style={styles.picker}
+              >
+                {KERALA_DISTRICTS.map(district => (
+                  <Picker.Item key={district} label={district} value={district} />
+                ))}
+              </Picker>
+            </View>
 
-          <Picker
-            selectedValue={formData.place}
-            onValueChange={value => handleInputChange('place', value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select Place" value="" />
-            {DISTRICT_PLACES[formData.district] &&
-              Object.keys(DISTRICT_PLACES[formData.district]).map(place => (
-                <Picker.Item key={place} label={place} value={place} />
-              ))}
-          </Picker>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.place}
+                onValueChange={value => handleInputChange('place', value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Place" value="" />
+                {DISTRICT_PLACES[formData.district] &&
+                  Object.keys(DISTRICT_PLACES[formData.district]).map(place => (
+                    <Picker.Item key={place} label={place} value={place} />
+                  ))}
+              </Picker>
+            </View>
 
-          <Picker
-            selectedValue={formData.locality}
-            onValueChange={value => handleInputChange('locality', value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select Locality" value="" />
-            {DISTRICT_PLACES[formData.district]?.[formData.place]?.map(locality => (
-              <Picker.Item key={locality} label={locality} value={locality} />
-            ))}
-          </Picker>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.locality}
+                onValueChange={value => handleInputChange('locality', value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Locality" value="" />
+                {DISTRICT_PLACES[formData.district]?.[formData.place]?.map(locality => (
+                  <Picker.Item key={locality} label={locality} value={locality} />
+                ))}
+              </Picker>
+            </View>
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your Mobile No"
-            value={formData.mobileNo}
-            keyboardType="numeric"
-            maxLength={10}
-            onChangeText={value => handleInputChange('mobileNo', value)}
-          />
-          {errors.mobileNo && <Text style={styles.errorText}>{errors.mobileNo}</Text>}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contact & ID Details</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Mobile Number"
+              value={formData.mobileNo}
+              keyboardType="numeric"
+              maxLength={10}
+              onChangeText={value => handleInputChange('mobileNo', value)}
+              placeholderTextColor="#666"
+            />
+            {errors.mobileNo && <Text style={styles.errorText}>{errors.mobileNo}</Text>}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your Aadhaar No"
-            value={formData.aadhaarNo}
-            keyboardType="numeric"
-            maxLength={12}
-            onChangeText={value => handleInputChange('aadhaarNo', value)}
-          />
-          {errors.aadhaarNo && <Text style={styles.errorText}>{errors.aadhaarNo}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Aadhaar Number"
+              value={formData.aadhaarNo}
+              keyboardType="numeric"
+              maxLength={12}
+              onChangeText={value => handleInputChange('aadhaarNo', value)}
+              placeholderTextColor="#666"
+            />
+            {errors.aadhaarNo && <Text style={styles.errorText}>{errors.aadhaarNo}</Text>}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your Ration ID"
-            value={formData.rationId}
-            keyboardType="numeric"
-            maxLength={10}
-            onChangeText={value => handleInputChange('rationId', value)}
-          />
-          {errors.rationId && <Text style={styles.errorText}>{errors.rationId}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Ration ID"
+              value={formData.rationId}
+              keyboardType="numeric"
+              maxLength={10}
+              onChangeText={value => handleInputChange('rationId', value)}
+              placeholderTextColor="#666"
+            />
+            {errors.rationId && <Text style={styles.errorText}>{errors.rationId}</Text>}
+          </View>
 
-          <Button
-            title="Next"
+          <TouchableOpacity
+            style={[styles.button, !isStepValid() && styles.buttonDisabled]}
             onPress={handleNext}
             disabled={!isStepValid()}
-            color="#003366"
-          />
-        </>
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {currentStep === 2 && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Choose a username"
-            value={formData.username}
-            onChangeText={value => handleInputChange('username', value)}
-          />
-          {isUsernameChecking && <Text style={styles.checkingText}>Checking username...</Text>}
-          {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Create a password"
-            value={formData.password}
-            secureTextEntry
-            onChangeText={value => handleInputChange('password', value)}
-          />
-          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Upload photo"
-            value={formData.photo}
-            onChangeText={value => handleInputChange('photo', value)}
-          />
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Select location on map"
-            value={formData.mappedHouse}
-            editable={false}
-          />
-          <MapScreen onLocationSelect={location => handleInputChange('mappedHouse', location)} />
-          
-          <View style={styles.buttonRow}>
-            <Button title="Back" onPress={() => setCurrentStep(1)} color="#003366" />
-            <Button
-              title="Submit"
-              onPress={handleSubmit}
-              disabled={
-                !formData.username || 
-                !formData.password || 
-                Object.keys(errors).some(key => key !== 'photo' && errors[key])
-              }
-              color="#003366"
+        <View style={styles.formSection}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Account Credentials</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Choose a username"
+              value={formData.username}
+              onChangeText={value => handleInputChange('username', value)}
+              placeholderTextColor="#666"
             />
+            {isUsernameChecking && <Text style={styles.checkingText}>Checking username...</Text>}
+            {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Create a password"
+              value={formData.password}
+              secureTextEntry
+              onChangeText={value => handleInputChange('password', value)}
+              placeholderTextColor="#666"
+            />
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-        </>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Photo Upload</Text>
+            <TouchableOpacity style={styles.uploadButton}>
+              <Text style={styles.uploadButtonText}>Upload Photo</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Residence Verification</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.isOwnerHome}
+                onValueChange={value => handleInputChange('isOwnerHome', value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Is this the Ration Card Owner's Home?" value="" />
+                <Picker.Item label="Yes" value="yes" />
+                <Picker.Item label="No" value="no" />
+              </Picker>
+            </View>
+            {errors.isOwnerHome && <Text style={styles.errorText}>{errors.isOwnerHome}</Text>}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>House Location</Text>
+            <View style={styles.mapContainer}>
+              <MapScreen onLocationSelect={location => handleInputChange('mappedHouse', location)} />
+            </View>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={[styles.button, styles.buttonSecondary]} 
+              onPress={() => setCurrentStep(1)}
+            >
+              <Text style={styles.buttonTextSecondary}>Back</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (!formData.username || !formData.password || !formData.isOwnerHome) && styles.buttonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={!formData.username || !formData.password || !formData.isOwnerHome}
+            >
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
-    </ScrollView>
-  );
+    </View>
+  </ScrollView>
+);
 };
 
+
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 2,
+    marginBottom: 10,
+  },
+  progressIndicator: {
+    height: '100%',
+    backgroundColor: '#003366',
+    borderRadius: 2,
+  },
+  stepIndicator: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
+  },
+  formSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#e0e0e0',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 16,
+    paddingHorizontal: 15,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#ffffff',
+    marginBottom: 8,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#ffffff',
   },
   picker: {
     height: 50,
-    marginBottom: 16,
-    backgroundColor: '#f9f9f9',
+  },
+  dateInput: {
+    justifyContent: 'center',
+  },
+  dateText: {
+    color: '#333',
+    fontSize: 16,
+  },
+  uploadButton: {
+    height: 50,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  uploadButtonText: {
+    color: '#666',
+    fontSize: 16,
+  },
+  mapContainer: {
+    height: 200,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 20,
+  },
+  button: {
+    backgroundColor: '#003366',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  buttonSecondary: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#003366',
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonTextSecondary: {
+    color: '#003366',
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorText: {
-    color: 'red',
+    color: '#dc3545',
     fontSize: 12,
-    marginTop: -12,
-    marginBottom: 8,
+    marginTop: 4,
   },
   checkingText: {
     color: '#666',
     fontSize: 12,
-    marginTop: -12,
-    marginBottom: 8,
+    marginTop: 4,
   },
 });
 
