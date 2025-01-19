@@ -58,7 +58,7 @@ const TabLayout = () => {
             return <IconComponent name={icon as any} size={size} color={color} />;
           },
           tabBarStyle:{
-            backgroundColor:'#161622'
+            backgroundColor:'#ecebec'
           }
         };
       }}

@@ -12,6 +12,8 @@ import {
 import { useRouter } from 'expo-router';
 import { API_URL } from '@/constants/constants';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const SignIn = () => {
   const router = useRouter();
@@ -28,8 +30,7 @@ const SignIn = () => {
 
     try {
       setIsLoading(true);
-      // console.log('Request URL:', `${API_URL}/user/resident_login`);
-      // console.log('Request Body:', { username, password });
+     
 
       const response = await fetch(`${API_URL}/user/resident_login`, {
         method: 'POST',
@@ -49,7 +50,7 @@ const SignIn = () => {
       }
       if (data.success && data.token) {
         // Store the token here if needed
-        // await AsyncStorage.setItem('userToken', data.token);
+         await AsyncStorage.setItem('userToken', data.token);
         
         router.replace('/home');
       } else {
@@ -119,7 +120,7 @@ const SignIn = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => {}} disabled={isLoading}>
+      <TouchableOpacity onPress={() => router.push('/forgot')} disabled={isLoading} >
         <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
       </TouchableOpacity>
 

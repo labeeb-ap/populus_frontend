@@ -81,7 +81,7 @@ export default function Home() {
     </SafeAreaView>
   );
 }
-
+          
 const Announcement: React.FC<AnnouncementProps> = ({
   department,
   time,
