@@ -24,7 +24,7 @@ export default function Home() {
 
   const handleMessagePress = () => {
     console.log('Message button pressed');
-    router.push('/message');
+    
     try {
       router.push('/message');
     } catch (error) {
@@ -33,6 +33,7 @@ export default function Home() {
   };
 
   const handleNotificationPress = () => {
+    console.log(" notification pressed");
     router.push('/notification'); // Navigate to notifications page
   };
 
