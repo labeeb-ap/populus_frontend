@@ -7,7 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons, Entypo,FontAwesome } from "@expo/vector-icons";
+import { useRouter } from 'expo-router'; 
 
 interface AnnouncementProps {
   department: string;
@@ -16,7 +17,26 @@ interface AnnouncementProps {
   message: string;
 }
 
+
+
 export default function Home() {
+  const router = useRouter();
+
+  const handleMessagePress = () => {
+    console.log('Message button pressed');
+    router.push('/message');
+    try {
+      router.push('/message');
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
+  const handleNotificationPress = () => {
+    router.push('/notification'); // Navigate to notifications page
+  };
+
+  
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -24,15 +44,19 @@ export default function Home() {
         <View style={styles.headerContent}>
           <Text style={styles.logoText}>POPULUS</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome name="exclamation-circle" size={24} color="#DC3545" />
+            <TouchableOpacity style={styles.iconButton}
+            onPress={handleNotificationPress}>
+            <Ionicons name="notifications-sharp" size={24} color="#DC3545" />
             </TouchableOpacity>
             <View style={styles.notificationContainer}>
-              <TouchableOpacity style={styles.iconButton}>
-                <FontAwesome name="envelope" size={24} color="#2C3E50" />
-                <View style={styles.notificationBadge}>
+              <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={handleMessagePress}>
+
+                <Entypo name="new-message" size={24} color="#2C3E50" />
+                {/* <View style={styles.notificationBadge}>
                   <Text style={styles.badgeText}>6</Text>
-                </View>
+                </View> */}
               </TouchableOpacity>
             </View>
           </View>
@@ -49,7 +73,7 @@ export default function Home() {
             </View>
             <View style={styles.weatherInfo}>
               <Text style={styles.city}>Montreal, Canada</Text>
-              <FontAwesome name="cloud-rain" size={40} color="#4A6572" />
+              {/* <FontAwesome name="cloud-rain" size={40} color="#4A6572" /> */}
             </View>
           </View>
         </View>
