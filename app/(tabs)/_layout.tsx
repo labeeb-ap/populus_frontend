@@ -73,6 +73,7 @@ const TabLayout = () => {
         />
       ))}
     </Tab.Navigator>
+    
   );
 };
 

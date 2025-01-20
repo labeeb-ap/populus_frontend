@@ -6,6 +6,8 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  ImageBackground,
+  
 } from "react-native";
 import { Ionicons, Entypo,FontAwesome } from "@expo/vector-icons";
 import { useRouter } from 'expo-router'; 
@@ -47,7 +49,7 @@ export default function Home() {
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton}
             onPress={handleNotificationPress}>
-            <Ionicons name="notifications-sharp" size={24} color="#DC3545" />
+            <Ionicons name="notifications-sharp" size={24} color="#2C3E50" />
             </TouchableOpacity>
             <View style={styles.notificationContainer}>
               <TouchableOpacity 
@@ -66,7 +68,11 @@ export default function Home() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Weather Widget */}
-        <View style={styles.weatherWidget}>
+        <ImageBackground
+          source={require('@/assets/images/sky.jpg')}
+          style={styles.weatherWidget}
+          imageStyle={styles.weatherImage}
+        >
           <View style={styles.weatherContent}>
             <View>
               <Text style={styles.temperature}>19°</Text>
@@ -74,10 +80,9 @@ export default function Home() {
             </View>
             <View style={styles.weatherInfo}>
               <Text style={styles.city}>Montreal, Canada</Text>
-              {/* <FontAwesome name="cloud-rain" size={40} color="#4A6572" /> */}
             </View>
           </View>
-        </View>
+        </ImageBackground>
 
         {/* Announcements Section */}
         <View style={styles.announcementsSection}>
@@ -197,11 +202,15 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  weatherImage: {
+    resizeMode: "cover",
+  },
   weatherWidget: {
     margin: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#72A0C1",
     borderRadius: 16,
     padding: 20,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -215,21 +224,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    
   },
   temperature: {
     fontSize: 48,
     fontWeight: "700",
-    color: "#2C3E50",
+    color: "#FFFDD0",
   },
   city: {
     fontSize: 18,
-    color: "#4A6572",
+    color: "#FFFDD0",
     fontWeight: "500",
     marginBottom: 8,
   },
   weather: {
     fontSize: 16,
-    color: "#6C757D",
+    color: "#FFFDD0",
     fontWeight: "500",
   },
   weatherInfo: {

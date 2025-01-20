@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome ,MaterialIcons} from '@expo/vector-icons';
 
 interface SurveyItem {
   id: string;
@@ -119,17 +119,21 @@ const Survey = () => {
         </View>
       </View>
 
-      {survey.reward && (
+      {/* {survey.reward && (
         <View style={styles.rewardBadge}>
           <FontAwesome name="gift" size={14} color="#28A745" />
           <Text style={styles.rewardText}>{survey.reward}</Text>
         </View>
-      )}
+      )} */}
 
       {!survey.isCompleted && (
         <TouchableOpacity style={styles.startButton}>
+        <View style={styles.buttonContent}>
+          <MaterialIcons name="start" size={20} color="#fff" />
           <Text style={styles.startButtonText}>Start Survey</Text>
-        </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+  
       )}
     </TouchableOpacity>
   );
@@ -322,16 +326,22 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   startButton: {
-    backgroundColor: '#1976D2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    backgroundColor: '#F28C28',
+    padding: 10,
+    borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   startButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+    marginLeft: 5,
   },
 });
 

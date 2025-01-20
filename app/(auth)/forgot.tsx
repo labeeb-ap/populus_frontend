@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#1b1b7e',
     height: 56,
     borderRadius: 12,
     flexDirection: 'row',

@@ -70,7 +70,7 @@ const SignIn = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.languageText}>English (India)</Text>
+      
 
       <Image
         source={require('@/assets/images/LLogo.png')}
@@ -144,15 +144,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  languageText: {
-    marginTop: 20,
-    color: '#5c5c5c',
-    fontSize: 16,
-    fontWeight: '500',
-  },
   logo: {
-    width: 100,
-    height: 100,
+    width: 210,
+    height: 200,
     resizeMode: 'contain',
     marginVertical: 30,
   },
@@ -174,7 +168,7 @@ const styles = StyleSheet.create({
   loginButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#1b1b7e',
+    backgroundColor: '#f33a59',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -189,12 +183,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   forgotPasswordText: {
-    color: '#007bff',
+    color: '#00538C',
     marginBottom: 20,
   },
   createAccountButton: {
     borderWidth: 1,
-    borderColor: '#1b1b7e',
+    borderColor: '#00538C',
     width: '100%',
     height: 50,
     justifyContent: 'center',
@@ -203,14 +197,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   createAccountText: {
-    color: '#1b1b7e',
+    color: '#00538C',
     fontSize: 16,
     fontWeight: '600',
   },
   footerText: {
     position: 'absolute',
     bottom: 20,
-    color: '#1b1b7e',
+    color: '#00538C',
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
