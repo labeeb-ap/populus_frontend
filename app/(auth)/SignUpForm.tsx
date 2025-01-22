@@ -6,14 +6,16 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import MapScreen from './MapScreen';
 import { API_URL } from '@/constants/constants';
+import styles from './Styles/SignUpForm';
 
 interface FormData {
   name: string;
+  email: string;
   dateOfBirth: Date | null;
   gender: string;
+  job: string;
+  address: string;
   houseDetails: string;
-  place: string;
-  locality: string;
   district: string;
   mobileNo: string;
   aadhaarNo: string;
@@ -22,7 +24,10 @@ interface FormData {
   mappedHouse: string;
   username: string;
   password: string;
+  confirmPassword:string;
   isOwnerHome: string; 
+  selfGovType: 'Panchayath'|'Municipality';
+  localBody: string;
 }
 
 interface ValidationErrors {
@@ -35,12 +40,36 @@ const KERALA_DISTRICTS = [
   'Wayanad', 'Kannur', 'Kasaragod'
 ];
 
-const DISTRICT_PLACES: { [key: string]: { [key: string]: string[] } } = {
-  'Palakkad': {
-    'Palakkad Town': ['Olavakkode', 'Stadium Puthur', 'Chandranagar'],
-    'Ottapalam': ['Vandazhi', 'Lakkidi', 'Shornur'],
-  },
-  // Add other districts
+const SELF_GOVERNMENT_TYPES = ['Panchayath', 'Municipality'];
+
+const PALAKKAD_LOCAL_BODIES : {
+  Panchayath: string[];
+    Municipality: string[];
+    }={
+  Panchayath: [
+    'AGALI', 'AKATHETHARA', 'ALANALLUR', 'ALATHUR', 'AMBALAPARA',
+    'ANAKKARA', 'ANANGANADI', 'AYILUR', 'CHALAVARA', 'CHALISSERI',
+    'COYALAMMANAM', 'ELAPPULLY', 'ELEVANCHERY', 'ERIMAYUR', 'ERUTHEMPATHY',
+    'KADAMPAZHIPURAM', 'KANHIRAPUZHA', 'KANNADI', 'KANNAMBRA', 'KAPPUR',
+    'KARAKURUSSI', 'KARIMPUZHA', 'KAVASSERI', 'KERALASSERY', 'KIZHAKKANCHERY',
+    'KODUMBA', 'KODUVAYUR', 'KOLLENGODE', 'KONGAD', 'KOPPAM',
+    'KOTTOPPADAM', 'KOTTAYI', 'KOZHINJAMPARA', 'KARIMBA', 'KULUKKALLUR',
+    'KUMARAMPUTHUR', 'KUTHANUR', 'LAKKIDI PERUR', 'MALAMPUZHA', 'MANKARA',
+    'MANNUR', 'MARUTHARODE', 'MATHUR', 'MUTHUTHALA', 'MELARCODE',
+    'MUNDUR', 'MUTHALAMADA', 'NAGALASSERI', 'NALLEPPILLY', 'NELLAYA',
+    'NELLIAMPATHY', 'NEMMARA', 'ONGALLUR', 'PALLASSANA', 'POOKKOTTUKAVU',
+    'PARUTHUR', 'PARALI', 'PATTITHARA', 'PATTANCHERY', 'PERUMATTY',
+    'PERUNGOTTUKURUSSI', 'PERUVEMBA', 'PIRAYIRI', 'POLPULLY', 'PUDUCODE',
+    'PUDUNAGARAM', 'PUDUPPARIYARM', 'PUDUR', 'PUDUSSERI', 'SHOLAYUR',
+    'SREEKRISHNAPURAM', 'TARUR', 'THACHAMPARA', 'THACHANATTUKARA',
+    'THENKURUSSI', 'THENKARA', 'THIRUMITTACODE', 'THIRUVEGAPURA',
+    'TRIKKADIRI', 'THRITHALA', 'VADAKKANCHERY', 'VADAKARAPATHY',
+    'VADAVANNUR', 'VALLAPUZHA', 'VANDAZHY'
+  ],
+  Municipality: [
+    'PALAKKAD', 'CHITTUR-TATTAMANGALAM', 'MANNARKKAD', 'CHERPULASSERY',
+    'OTTPPALAM', 'SHORANUR', 'PATTAMBI'
+  ]
 };
 
 const SignUpForm: React.FC = () => {
@@ -52,12 +81,15 @@ const SignUpForm: React.FC = () => {
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    email: '',
     dateOfBirth: null,
     gender: '',
+    job: '',
+    address: '',
     houseDetails: '',
-    place: '',
-    locality: '',
     district: 'Palakkad',
+    selfGovType: '',
+    localBody: '',
     mobileNo: '',
     aadhaarNo: '',
     rationId: '',
@@ -65,7 +97,8 @@ const SignUpForm: React.FC = () => {
     mappedHouse: '',
     username: '',
     password: '',
-    isOwnerHome: '' ,
+    confirmPassword: '',
+    isOwnerHome: '',
   });
 
   const validateField = (field: keyof FormData, value: any): string => {
@@ -93,6 +126,15 @@ const SignUpForm: React.FC = () => {
         return !passwordRegex.test(value) ? 'Password must be 8 characters with letters, numbers, and special characters' : '';
       case 'isOwnerHome':
           return !value ? 'Please specify if this is the ration card owner\'s home' : '';
+          case 'email':
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return !emailRegex.test(value) ? 'Please enter a valid email address' : '';
+          case 'job':
+            return !value ? 'Please select your occupation' : '';
+          case 'address':
+            return !value ? 'Address is required' : '';
+          case 'confirmPassword':
+            return value !== formData.password ? 'Passwords do not match' : '';  
       default:
         return '';
     }
@@ -140,17 +182,21 @@ const SignUpForm: React.FC = () => {
     // });
     const requiredFields: (keyof FormData)[] = [
       'name',
+      'email',
       'dateOfBirth',
       'gender',
+      'job',
+      'address',
       'houseDetails',
-      'place',
-      'locality',
+      'selfGovType',
+      'localBody',
       'district',
       'mobileNo',
       'aadhaarNo',
       'rationId',
       'username',
       'password',
+      'confirmPassword',
       'mappedHouse'
     ];
     requiredFields.forEach((field) => {
@@ -167,21 +213,48 @@ const SignUpForm: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  const JOB_OPTIONS = [
+    'Doctor',
+    'Engineer',
+    'Teacher',
+    'Lawyer',
+    'Software Developer',
+    'Accountant',
+    'Nurse',
+    'Business Owner',
+    'Electrician',
+    'Plumber',
+    'Mechanic',
+    'Driver',
+    'Farmer',
+    'Artist',
+    'Chef',
+    'Scientist',
+    'Police Officer',
+    'Soldier',
+    'Photographer',
+    'Student',
+    'Unemployed',
+  ];
+  
   const isStepValid = () => {
     if (currentStep === 1) {
       return (
         formData.name &&
+        formData.email &&
         formData.dateOfBirth &&
         formData.gender &&
+        formData.job &&
+        formData.address &&
         formData.houseDetails &&
-        formData.place &&
-        formData.locality &&
         formData.district &&
         formData.mobileNo &&
         formData.aadhaarNo &&
         formData.rationId &&
+        formData.selfGovType&&
+        formData.localBody&&
         !errors.name &&
+        !errors.email &&
         !errors.mobileNo &&
         !errors.aadhaarNo &&
         !errors.rationId
@@ -272,6 +345,20 @@ const SignUpForm: React.FC = () => {
           </View>
 
           <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                value={formData.email}
+                onChangeText={value => handleInputChange('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#666"
+              />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Date of Birth</Text>
             <TouchableOpacity
               style={[styles.input, styles.dateInput]}
@@ -312,6 +399,38 @@ const SignUpForm: React.FC = () => {
             </View>
           </View>
 
+
+          <View style={styles.inputGroup}>
+              <Text style={styles.label}>Occupation</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={formData.job}
+                  onValueChange={value => handleInputChange('job', value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select Occupation" value="" />
+                  {JOB_OPTIONS.map(job => (
+                    <Picker.Item key={job} label={job} value={job} />
+                  ))}
+                </Picker>
+              </View>
+              {errors.job && <Text style={styles.errorText}>{errors.job}</Text>}
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Address</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Enter your full address"
+                value={formData.address}
+                onChangeText={value => handleInputChange('address', value)}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#666"
+              />
+              {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+            </View>
+            
           <View style={styles.inputGroup}>
             <Text style={styles.label}>House Details</Text>
             <TextInput
@@ -337,34 +456,40 @@ const SignUpForm: React.FC = () => {
               </Picker>
             </View>
 
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.place}
-                onValueChange={value => handleInputChange('place', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Place" value="" />
-                {DISTRICT_PLACES[formData.district] &&
-                  Object.keys(DISTRICT_PLACES[formData.district]).map(place => (
-                    <Picker.Item key={place} label={place} value={place} />
-                  ))}
-              </Picker>
-            </View>
+            {formData.district === 'Palakkad' && (
+    <>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={formData.selfGovType}
+          onValueChange={value => {
+            handleInputChange('selfGovType', value);
+            handleInputChange('localBody', ''); // Reset local body when gov type changes
+          }}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select Self Government Type" value="" />
+          {SELF_GOVERNMENT_TYPES.map(type => (
+            <Picker.Item key={type} label={type} value={type} />
+          ))}
+        </Picker>
+      </View>
 
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.locality}
-                onValueChange={value => handleInputChange('locality', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Locality" value="" />
-                {DISTRICT_PLACES[formData.district]?.[formData.place]?.map(locality => (
-                  <Picker.Item key={locality} label={locality} value={locality} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
+      {formData.selfGovType && (
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.localBody}
+            onValueChange={value => handleInputChange('localBody', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Local Body" value="" />
+            {PALAKKAD_LOCAL_BODIES[formData.selfGovType]?.map(body => (
+              <Picker.Item key={body} label={body} value={body} />
+            ))}
+          </Picker>
+        </View>
+      )}
+    </>
+  )}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Contact & ID Details</Text>
             <TextInput
@@ -409,6 +534,7 @@ const SignUpForm: React.FC = () => {
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
         </View>
+   </View>     
       )}
 
       {currentStep === 2 && (
@@ -426,15 +552,28 @@ const SignUpForm: React.FC = () => {
             {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
 
             <TextInput
-              style={styles.input}
-              placeholder="Create a password"
-              value={formData.password}
-              secureTextEntry
-              onChangeText={value => handleInputChange('password', value)}
-              placeholderTextColor="#666"
-            />
-            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-          </View>
+                style={styles.input}
+                placeholder="Create a password"
+                value={formData.password}
+                secureTextEntry
+                onChangeText={value => handleInputChange('password', value)}
+                placeholderTextColor="#666"
+              />
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                secureTextEntry
+                onChangeText={value => handleInputChange('confirmPassword', value)}
+                placeholderTextColor="#666"
+              />
+              {errors.confirmPassword && (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              )}
+            </View>
+
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Photo Upload</Text>
@@ -492,150 +631,5 @@ const SignUpForm: React.FC = () => {
 );
 };
 
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  container: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 2,
-    marginBottom: 10,
-  },
-  progressIndicator: {
-    height: '100%',
-    backgroundColor: '#003366',
-    borderRadius: 2,
-  },
-  stepIndicator: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
-  },
-  formSection: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: '#ffffff',
-    marginBottom: 8,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: '#ffffff',
-  },
-  picker: {
-    height: 50,
-  },
-  dateInput: {
-    justifyContent: 'center',
-  },
-  dateText: {
-    color: '#333',
-    fontSize: 16,
-  },
-  uploadButton: {
-    height: 50,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderStyle: 'dashed',
-  },
-  uploadButtonText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  mapContainer: {
-    height: 200,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  button: {
-    backgroundColor: '#003366',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  buttonSecondary: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#003366',
-  },
-  buttonDisabled: {
-    backgroundColor: '#cccccc',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonTextSecondary: {
-    color: '#003366',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#dc3545',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  checkingText: {
-    color: '#666',
-    fontSize: 12,
-    marginTop: 4,
-  },
-});
 
 export default SignUpForm;

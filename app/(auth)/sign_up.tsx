@@ -1,9 +1,9 @@
-// App.tsx
+// App.tsx or sign_up.tsx
 import React, { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import SignUpForm from './SignUpForm';
 
-export default function sign_up() {
+export default function SignUp() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mappedHouse, setMappedHouse] = useState<string>('');
