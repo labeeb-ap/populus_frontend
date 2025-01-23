@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#1b1b7e',
+    backgroundColor: '#f33a59',
     height: 56,
     borderRadius: 12,
     flexDirection: 'row',
@@ -298,4 +298,4 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
-});
+});              

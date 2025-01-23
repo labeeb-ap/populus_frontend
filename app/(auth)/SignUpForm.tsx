@@ -26,7 +26,7 @@ interface FormData {
   password: string;
   confirmPassword:string;
   isOwnerHome: string; 
-  selfGovType: 'Panchayath'|'Municipality';
+  selfGovType: 'Panchayath'|'Municipality'| undefined;
   localBody: string;
 }
 
@@ -88,7 +88,7 @@ const SignUpForm: React.FC = () => {
     address: '',
     houseDetails: '',
     district: 'Palakkad',
-    selfGovType: '',
+    selfGovType: undefined,
     localBody: '',
     mobileNo: '',
     aadhaarNo: '',
@@ -180,6 +180,7 @@ const SignUpForm: React.FC = () => {
     //     newErrors[fieldName] = error;
     //   }
     // });
+    
     const requiredFields: (keyof FormData)[] = [
       'name',
       'email',
