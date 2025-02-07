@@ -6,7 +6,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import MapScreen from './MapScreen';
 import { API_URL } from '@/constants/constants';
-
+import * as ImagePicker from 'expo-image-picker';
+const UPLOAD_PRESET = 'react_native_preset';
+import axios from 'axios';
 interface FormData {
   name: string;
   dateOfBirth: Date | null;
@@ -67,7 +69,75 @@ const SignUpForm: React.FC = () => {
     password: '',
     isOwnerHome: '' ,
   });
+  const [image, setImage] = useState<string | null>(null);
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      alert('Camera roll permission is required!');
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+  
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      uploadToCloudinary(result.assets[0].uri);
+    }
+  };
+  
+  const uploadToCloudinary = async (uri: string) => {
+    try {
+      // Create the FormData object for the image
+      const imagedata = new FormData();
+  
+      // Extract the file name and type from the URI
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+  
+      // Append the file data in the correct format for React Native
+      imagedata.append('file', {
+        uri,
+        name: filename || 'upload.jpg',
+        type,
+      });
+  
+      // Append the upload preset
+      imagedata.append('upload_preset', 'profilepic');
+  
+      // Make the request to Cloudinary
+      const uploadResponse = await axios.post(
+        'https://api.cloudinary.com/v1_1/dnwlvkrqs/image/upload',
+        imagedata,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+  
+      // Get the secure URL of the uploaded image
+      const imageUrl = uploadResponse.data.secure_url;
+      console.log('Uploaded:', imageUrl);
+  
+      // Update the formData with the uploaded image URL
+      setFormData((prev) => ({
+        ...prev,
+        photo: imageUrl,
+      }));
+    } catch (error) {
+      console.error('Cloudinary upload failed:', error);
+      Alert.alert('Upload Failed', 'Could not upload the image. Please try again.');
+    }
+  };
+      
   const validateField = (field: keyof FormData, value: any): string => {
     switch (field) {
       case 'name':
@@ -436,12 +506,13 @@ const SignUpForm: React.FC = () => {
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Photo Upload</Text>
-            <TouchableOpacity style={styles.uploadButton}>
+          {formData.photo ? (
+            <Image source={{ uri: formData.photo }} style={styles.imagePreview} />
+          ) : (
+            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
               <Text style={styles.uploadButtonText}>Upload Photo</Text>
             </TouchableOpacity>
-          </View>
+      )}
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Residence Verification</Text>
@@ -635,6 +706,12 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     marginTop: 4,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 15,
   },
 });
 
