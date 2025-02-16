@@ -2,6 +2,7 @@ import { Alert, StyleSheet, Text, View, Dimensions, Image } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 interface LocationData {
@@ -42,12 +43,19 @@ function Map() {
 
   useEffect(() => {
     const fetchData = async () => {
+      
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        alert("User token not found. Please log in again.");
+        return;
+      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/user/map`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
           },
         });
 

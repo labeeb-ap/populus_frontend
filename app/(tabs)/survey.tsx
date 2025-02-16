@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { FontAwesome ,MaterialIcons} from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Correct import
+import { API_URL } from '@/constants/constants';
 
 interface SurveyItem {
   id: string;
@@ -21,72 +23,46 @@ interface SurveyItem {
   isCompleted?: boolean;
 }
 
+
 const Survey = () => {
-  const [activeTab, setActiveTab] = useState('public');
+  const [publicSurveys, setPublicSurveys] = useState<SurveyItem[]>([]);
 
-  const publicSurveys: SurveyItem[] = [
-    {
-      id: '1',
-      title: 'City Transportation Feedback',
-      description: 'Help us improve public transportation services in your area',
-      dueDate: '2024-02-01',
-      estimatedTime: '10 mins',
-      responses: 245,
-      reward: '$5 Gift Card'
-    },
-    {
-      id: '2',
-      title: 'Community Safety Survey',
-      description: 'Share your thoughts on neighborhood safety measures',
-      dueDate: '2024-02-15',
-      estimatedTime: '15 mins',
-      responses: 182,
-      reward: '500 Points'
-    }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        alert("User token not found. Please log in again.");
+        return;
+      }
 
-  const targetedSurveys: SurveyItem[] = [
-    {
-      id: '3',
-      title: 'Senior Citizens Healthcare Access',
-      description: 'Survey for residents aged 65+ about healthcare services',
-      category: 'Healthcare',
-      dueDate: '2024-02-10',
-      estimatedTime: '20 mins',
-      responses: 89,
-      reward: '$10 Gift Card'
-    },
-    {
-      id: '4',
-      title: 'Youth Recreation Programs',
-      description: 'Feedback on youth activities and facilities',
-      category: 'Recreation',
-      dueDate: '2024-02-05',
-      estimatedTime: '12 mins',
-      responses: 156,
-      reward: '750 Points'
-    }
-  ];
+      try {
+        const response = await fetch(`${API_URL}/user/map`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const completedSurveys: SurveyItem[] = [
-    {
-      id: '5',
-      title: 'Library Services Feedback',
-      description: 'Evaluation of community library services and resources',
-      dueDate: '2024-01-15',
-      estimatedTime: '8 mins',
-      responses: 342,
-      isCompleted: true
-    }
-  ];
+        if (!response.ok) {
+          throw new Error('Failed to fetch surveys');
+        }
+
+        const data = await response.json();
+        setPublicSurveys(data); // Assuming the API returns an array of surveys
+      } catch (error) {
+        console.error('Error fetching surveys:', error);
+        alert('Failed to fetch surveys. Please try again later.');
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const renderSurveyCard = (survey: SurveyItem) => (
     <TouchableOpacity
       key={survey.id}
-      style={[
-        styles.surveyCard,
-        survey.isCompleted && styles.completedCard
-      ]}
+      style={styles.surveyCard}
     >
       <View style={styles.cardHeader}>
         <View style={styles.titleContainer}>
@@ -119,21 +95,20 @@ const Survey = () => {
         </View>
       </View>
 
-      {/* {survey.reward && (
+      {survey.reward && (
         <View style={styles.rewardBadge}>
           <FontAwesome name="gift" size={14} color="#28A745" />
           <Text style={styles.rewardText}>{survey.reward}</Text>
         </View>
-      )} */}
+      )}
 
       {!survey.isCompleted && (
         <TouchableOpacity style={styles.startButton}>
-        <View style={styles.buttonContent}>
-          <MaterialIcons name="start" size={20} color="#fff" />
-          <Text style={styles.startButtonText}>Start Survey</Text>
-        </View>
-      </TouchableOpacity>
-  
+          <View style={styles.buttonContent}>
+            <MaterialIcons name="start" size={20} color="#fff" />
+            <Text style={styles.startButtonText}>Start Survey</Text>
+          </View>
+        </TouchableOpacity>
       )}
     </TouchableOpacity>
   );
@@ -147,40 +122,11 @@ const Survey = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'public' && styles.activeTab]}
-          onPress={() => setActiveTab('public')}
-        >
-          <Text style={[styles.tabText, activeTab === 'public' && styles.activeTabText]}>
-            Public
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'targeted' && styles.activeTab]}
-          onPress={() => setActiveTab('targeted')}
-        >
-          <Text style={[styles.tabText, activeTab === 'targeted' && styles.activeTabText]}>
-            Targeted
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
-          onPress={() => setActiveTab('completed')}
-        >
-          <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>
-            Completed
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === 'public' && publicSurveys.map(renderSurveyCard)}
-        {activeTab === 'targeted' && targetedSurveys.map(renderSurveyCard)}
-        {activeTab === 'completed' && completedSurveys.map(renderSurveyCard)}
+        {publicSurveys.map(renderSurveyCard)}
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,32 +155,6 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: 8,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 20,
-    marginHorizontal: 4,
-  },
-  activeTab: {
-    backgroundColor: '#E3F2FD',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6C757D',
-  },
-  activeTabText: {
-    color: '#1976D2',
-  },
   content: {
     flex: 1,
     padding: 16,
@@ -252,10 +172,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  completedCard: {
-    opacity: 0.8,
-    backgroundColor: '#F8F9FA',
   },
   cardHeader: {
     flexDirection: 'row',
