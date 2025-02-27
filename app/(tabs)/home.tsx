@@ -1,322 +1,775 @@
-import React from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  SafeAreaView,
+  FlatList,
   TouchableOpacity,
-  ImageBackground,
-  
-} from "react-native";
-import { Ionicons, Entypo,FontAwesome } from "@expo/vector-icons";
-import { useRouter } from 'expo-router'; 
+  Image,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  Modal,
+  TextInput,
+  Linking,
+} from 'react-native';
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { API_URL } from '@/constants/constants';
+import styles from "@/app/(tabs)/Style/homestyle";
+import Entypo from 'react-native-vector-icons/Entypo';
+import Feather from 'react-native-vector-icons/Feather';
+import Share, { ShareSingleOptions } from 'react-native-share';
+import * as Sharing from 'expo-sharing';
 
-interface AnnouncementProps {
-  department: string;
-  time: string;
-  title: string;
-  message: string;
+
+const COLORS = {
+  primary: '#1F3A93',
+  primaryLight: '#3A5FBF',
+  secondary: '#007ACC',
+  background: '#F6F8FA',
+  cardBackground: '#FFFFFF',
+  text: '#2C3E50',
+  textLight: '#546E7A',
+  subtext: '#7F8C8D',
+  accent: '#00A8FF',
+  white: '#FFFFFF',
+  border: '#E4E8EC',
+  borderLight: '#F0F2F5',
+  error: '#C0392B',
+  success: '#27AE60',
+};
+
+interface Department {
+  id: number;
+  name: string;
+  color: string;
+  icon: string;
+  iconFamily: 'MaterialIcons' | 'MaterialCommunityIcons';
 }
 
 
 
-export default function Home() {
-  const router = useRouter();
+const DEPARTMENTS: Department[] = [
+  { 
+    id: 1, 
+    name: 'Local Government', 
+    color: '#3498DB',
+    icon: 'account-balance',
+    iconFamily: 'MaterialIcons'
+  },
+  { 
+    id: 2, 
+    name: 'Health Department', 
+    color: '#2ECC71',
+    icon: 'local-hospital',
+    iconFamily: 'MaterialIcons'
+  },
+  { 
+    id: 3, 
+    name: 'Police Department', 
+    color: '#34495E',
+    icon: 'police-badge',
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 4, 
+    name: 'Fire Department', 
+    color: '#E74C3C',
+    icon: 'fire-truck',
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 5, 
+    name: 'Education Department', 
+    color: '#9B59B6',
+    icon: 'school',
+    iconFamily: 'MaterialIcons'
+  },
+  { 
+    id: 6, 
+    name: 'Transportation Department', 
+    color: '#F1C40F',
+    icon: 'bus',
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 7, 
+    name: 'Environmental Department', 
+    color: '#16A085',
+    icon: 'leaf',
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 8, 
+    name: 'Social Services', 
+    color: '#E67E22',
+    icon: 'account-group',
+    iconFamily: 'MaterialCommunityIcons'
+  },
+];
 
-  const handleMessagePress = () => {
-    console.log('Message button pressed');
+interface Comment {
+  username: string;
+  message: string;
+  createdAt: Date;
+}
+
+interface Post {
+  _id: string;
+  department: string;
+  time: Date;
+  title: string;
+  message: string;
+  imageUri?: string;
+  reactions: {
+    likes: number;
+    dislikes: number;
+    comments: Comment[];
+  };
+  createdAt: Date;
+  userReaction?: 'like' | 'dislike' | null;
+}
+
+// Weather data mock (could be replaced with actual API)
+const weatherData = {
+  temperature: 28,
+  condition: 'Sunny',
+  city: 'City Center',
+  humidity: 42,
+  wind: 5.2
+};
+
+const DepartmentIcon: React.FC<{ department: Department; size?: number; color?: string }> = ({
+  department,
+  size = 24,
+  color,
+}) => {
+  if (!department) return null;
+
+  if (department.iconFamily === 'MaterialIcons') {
+    return <MaterialIcons name={department.icon} size={size} color={color || department.color} />;
+  } else if (department.iconFamily === 'MaterialCommunityIcons') {
+    return <MaterialCommunityIcons name={department.icon} size={size} color={color || department.color} />;
+  }
+
+  return null;
+};
+
+const CommentModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  postId: string;
+  comments: Comment[];
+  onAddComment: (comment: string) => Promise<void>;
+}> = ({ visible, onClose, postId, comments, onAddComment }) => {
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
     
+    setIsSubmitting(true);
     try {
-      router.push('/message');
+      await onAddComment(newComment.trim());
+      setNewComment('');
     } catch (error) {
-      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleNotificationPress = () => {
-    console.log(" notification pressed");
-    router.push('/notification'); // Navigate to notifications page
+  const renderComment = ({ item }: { item: Comment }) => (
+    <View style={styles.commentItem}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.username}>{item.username}</Text>
+        <Text style={styles.commentTime}>
+          {new Date(item.createdAt).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </Text>
+      </View>
+      <Text style={styles.commentMessage}>{item.message}</Text>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.commentModalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Comments</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Icon name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={comments}
+            renderItem={renderComment}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={styles.commentsList}
+            ListEmptyComponent={
+              <View style={styles.emptyComments}>
+                <Icon name="chatbubbles-outline" size={48} color={COLORS.subtext} />
+                <Text style={styles.emptyCommentsText}>No comments yet. Be the first to comment!</Text>
+              </View>
+            }
+          />
+
+          <View style={styles.commentInput}>
+            <TextInput
+              style={styles.commentTextInput}
+              placeholder="Write a comment..."
+              placeholderTextColor={COLORS.subtext}
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+            />
+            <TouchableOpacity
+              style={[
+                styles.commentSubmitButton,
+                (!newComment.trim() || isSubmitting) && styles.commentSubmitButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={!newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Icon name="send" size={20} color={COLORS.white} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+
+
+// const handleShare = async (item) => {
+
+//   console.log(Share.Social);
+//   try {
+//     const shareOptions: ShareSingleOptions = {
+//       title: item.title,
+//       message: item.message,
+//       social: Share.Social.WHATSAPP, // Correct enum value
+//     };
+//     await Share.shareSingle(shareOptions);
+//   } catch (error) {
+//     console.error('Error sharing:', error);
+//   }
+// };
+
+// const WeatherWidget: React.FC = () => {
+//   return (
+//     <View style={styles.weatherWidget}>
+//       <View style={styles.weatherContent}>
+//         <View>
+//           <Text style={styles.temperature}>28°</Text>
+//           <Text style={styles.weather}>Sunny</Text>
+//           <Text style={styles.city}>Your City</Text>
+          
+//           <View style={styles.weatherDetails}>
+//             <View style={styles.weatherDetail}>
+//               <Feather name="droplet" size={14} color={COLORS.white} />
+//               <Text style={styles.weatherDetailText}>42%</Text>
+//             </View>
+//             <View style={styles.weatherDetail}>
+//               <Feather name="wind" size={14} color={COLORS.white} />
+//               <Text style={styles.weatherDetailText}>5.2 mph</Text>
+//             </View>
+//           </View>
+//         </View>
+        
+//         <View style={styles.weatherIconContainer}>
+//           <Icon name="sunny" size={40} color={COLORS.white} />
+//         </View>
+//       </View>
+//     </View>
+//   );
+// };
+const WeatherWidget = () => {
+  return (
+    <View style={styles.weatherWidget}>
+      <View style={styles.weatherHeader}>
+        <View style={styles.locationContainer}>
+          <Feather name="map-pin" size={14} color={COLORS.primary} />
+          <Text style={styles.locationText}>San Francisco, CA</Text>
+        </View>
+        <Text style={styles.dateText}>February 27, 2025</Text>
+      </View>
+      
+      <View style={styles.weatherContent}>
+        <View style={styles.mainWeatherInfo}>
+          <View style={styles.temperatureContainer}>
+            <Text style={styles.temperature}>28°</Text>
+            <View style={styles.highLowContainer}>
+              <View style={styles.highLowItem}>
+                <Feather name="arrow-up" size={12} color={COLORS.textLight} />
+                <Text style={styles.highLowText}>32°</Text>
+              </View>
+              <View style={styles.highLowItem}>
+                <Feather name="arrow-down" size={12} color={COLORS.textLight} />
+                <Text style={styles.highLowText}>24°</Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.conditionContainer}>
+            <View style={styles.weatherIconContainer}>
+              <Feather name="sun" size={32} color={COLORS.primary} />
+            </View>
+            <Text style={styles.weatherCondition}>Sunny</Text>
+            <Text style={styles.feelsLikeText}>Feels like 30°</Text>
+          </View>
+        </View>
+        
+        <View style={styles.detailsContainer}>
+          <View style={styles.detailItem}>
+            <Feather name="droplet" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>Humidity</Text>
+            <Text style={styles.detailValue}>42%</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <Feather name="wind" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>Wind</Text>
+            <Text style={styles.detailValue}>5.2 mph</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <Feather name="sun" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>UV Index</Text>
+            <Text style={styles.detailValue}>7 High</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+  const Home = ()=>  {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  
+
+  // Animated values for interaction feedback
+
+    // Add handler functions for header buttons
+    const handleNotificationPress = () => {
+      Alert.alert("Notifications", "You clicked the notifications button");
+    };
+  
+    const handleMessagePress = () => {
+      Alert.alert("Messages", "You clicked the messages button");
+    };
+
+
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/posts/display`);
+      const transformedPosts = response.data.announcements.map((post: any) => ({
+        _id: post._id,
+        department: post.department,
+        time: new Date(post.time),
+        title: post.title,
+        message: post.message,
+        imageUri: post.imageUri,
+        reactions: {
+          likes: post.reactions?.likes || 0,
+          dislikes: post.reactions?.dislikes || 0,
+          comments: post.reactions?.comments?.map((c: any) => ({
+            ...c,
+            createdAt: new Date(c.createdAt)
+          })) || []
+        },
+        createdAt: new Date(post.createdAt),
+        userReaction: post.userReaction
+      }));
+      setPosts(transformedPosts);
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to fetch posts. Please check your connection and try again.',
+        [{ text: 'Retry', onPress: fetchPosts }, { text: 'OK' }]
+      );
+      console.error('Fetch posts error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  
+  const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
+    try {
+      const userId = 'authenticated-user-id'; 
+      const response = await axios.post(`${API_URL}/posts/${postId}/reaction`, {
+        userId,
+        type
+      });
+      console.log(response.data);
+      //update UI
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post._id === postId 
+            ? {
+                ...post,
+                reactions: {
+                  ...post.reactions,
+                  likes: response.data.reactions.likes,
+                  dislikes: response.data.reactions.dislikes
+                },
+                userReaction: response.data.userReaction
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      Alert.alert('Error', `Failed to ${type} post. Please try again.`);
+    }
+  };
+
+  const handleAddComment = async (postId: string, message: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
+        username: 'Sreekrishnapuram',
+        message
+      });
+
+      setPosts(prevPosts =>
+        prevPosts.map(post => {
+          if (post._id === postId) {
+            return {
+              ...post,
+              reactions: {
+                ...post.reactions,
+                comments: [...post.reactions.comments, {
+                  ...response.data,
+                  createdAt: new Date(response.data.createdAt)
+                }]
+              }
+            };
+          }
+          return post;
+        })
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Add comment error:', error);
+      throw error;
+    }
+  };
+
+  const renderPostItem = ({ item }: { item: Post }) => {
+    const department = DEPARTMENTS.find(d => d.name === item.department);
+    
+    const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    //  // Function to handle WhatsApp sharing
+    //  const shareToWhatsApp = async () => {
+    //   // Create formatted message
+    //   let message = "";
+      
+    //   // Add department if available
+    //   if (department) {
+    //     message += `Department name: ${department.name}\n`;
+    //   }
+      
+    //   // Add date
+    //   message += `Date: ${formattedDate}\n`;
+      
+    //   // Add topic (title)
+    //   message += `Topic: ${item.title}\n`;
+      
+    //   // Add content
+    //   message += `Content: ${item.message}`;
+    //   // You can add a link to your app or content if needed
+    //   // message += `\n\nView in app: https://yourapp.com/posts/${item._id}`;
+      
+    //   try {
+    //     // If there's an image, we need to use the Share API
+    //     if (item.imageUri) {
+    //       // For local files, use 'file://' + imageUri
+    //       // For remote images, we might need to download them first
+    //       const shareOptions = {
+    //         title: item.title,
+    //         message: message,
+    //         url: item.imageUri, // This is the image URI
+    //         social: Share.Social.WHATSAPP,
+    //         whatsAppNumber: "", // This can be empty for general sharing
+    //         // The type definition requires the following for completeness
+    //         type: 'image/*',
+    //         filename: 'image'
+    //       };
+          
+    //       await Share.shareSingle(shareOptions);
+    //     } else {
+    //       // If no image, use the regular URL scheme
+    //       const encodedMessage = encodeURIComponent(message);
+    //       const whatsappUrl = `whatsapp://send?text=${encodedMessage}`;
+          
+    //       const canOpen = await Linking.canOpenURL(whatsappUrl);
+    //       if (canOpen) {
+    //         await Linking.openURL(whatsappUrl);
+    //       } else {
+    //         Alert.alert(
+    //           "WhatsApp not installed",
+    //           "Please install WhatsApp to share content."
+    //         );
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('Error sharing to WhatsApp:', error);
+    //     Alert.alert(
+    //       "Sharing failed",
+    //       "There was an error sharing this content. Please try again later."
+    //     );
+    //   }
+    // };
+      // Update your share function to use proper typing
+      const shareToWhatsApp = async (item: Post) => {
+        try {
+          // Get department name
+          const departmentName = DEPARTMENTS.find(d => d.name === item.department)?.name || "Department not specified";
+          
+          // Format date nicely
+          const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Create comprehensive formatted message
+          const message = 
+            `*${item.title}*\n\n` +
+            ` *${departmentName}\n` +
+            `*Date:* ${formattedDate}\n\n` +
+            `${item.message}\n\n` + 
+            (item.imageUri ? `*Image:* ${item.imageUri}\n\n` : "") +
+            "Shared from Populus App";
+          
+          // For WhatsApp sharing via Linking (no need for RNShare)
+          const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+          
+          const canOpen = await Linking.canOpenURL(whatsappUrl);
+          if (canOpen) {
+            await Linking.openURL(whatsappUrl);
+          } else {
+            Alert.alert("WhatsApp not installed", "Please install WhatsApp to share content.");
+          }
+        } catch (error) {
+          console.error('Error sharing:', error);
+          Alert.alert(
+            'Sharing Failed',
+            'Could not share this post to WhatsApp. Please try again later.'
+          );
+        }
+      };
+
+    return (
+      <View style={styles.postContainer}>
+        <View style={styles.postHeader}>
+          {department && (
+            <View style={styles.departmentInfo}>
+              <View style={styles.departmentIconContainer}>
+                <DepartmentIcon department={department} size={24}  />
+              </View>
+              <View style={styles.departmentTextContainer}>
+                <Text style={styles.departmentText}>{department.name}</Text>
+                <Text style={styles.postDate}>{formattedDate}</Text>
+              </View>
+            </View>
+          )}
+          <TouchableOpacity style={styles.moreOptionsButton}>
+            <MaterialIcons name="more-vert" size={22} color={COLORS.textLight} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.postContent}>{item.message}</Text>
+        
+        {item.imageUri && (
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+        )}
+        
+        <View style={styles.postStats}>
+          <Text style={styles.statsText}>
+            {item.reactions.likes > 0 && <Text>{item.reactions.likes} likes</Text>}
+            {item.reactions.likes > 0 && item.reactions.comments.length > 0 && <Text> • </Text>}
+            {item.reactions.comments.length > 0 && <Text>{item.reactions.comments.length} comments</Text>}
+          </Text>
+        </View>
+        
+        <View style={styles.separator} />
+        
+        <View style={styles.postActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleReaction(item._id, 'like')}
+          >
+            <View style={styles.iconContainer}>
+            <Icon 
+              name={item.userReaction === 'like' ? "thumbs-up" : "thumbs-up-outline"} 
+              size={20} 
+              color={item.userReaction === 'like' ? COLORS.secondary : COLORS.textLight} 
+            />
+            <Text style={[
+              styles.actionText, 
+              item.userReaction === 'like' && styles.activeActionText
+            ]}>
+              {item.reactions.likes > 0 ? item.reactions.likes : ''}Like</Text>
+              </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleReaction(item._id, 'dislike')}
+          >
+            <Icon 
+              name={item.userReaction === 'dislike' ? "thumbs-down" : "thumbs-down-outline"} 
+              size={20} 
+              color={item.userReaction === 'dislike' ? COLORS.error : COLORS.textLight} 
+            />
+            <Text style={[
+              styles.actionText, 
+              item.userReaction === 'dislike' && styles.activeActionText
+            ]}>
+              {item.reactions.dislikes > 0 ? item.reactions.dislikes : ''} Dislike
+            </Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => {
+              setSelectedPostId(item._id);
+              setCommentModalVisible(true);
+            }}
+          >
+            <Icon name="chatbubble-outline" size={20} color={COLORS.textLight} />
+            <Text style={styles.actionText}>Comment</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => shareToWhatsApp(item)}
+          >
+            <Icon name="logo-whatsapp" size={20} color="#25D366" />
+            <Text style={styles.actionText}>WhatsApp</Text>
+          </TouchableOpacity>
+        </View>
+
+        {selectedPostId === item._id && (
+          <CommentModal
+            visible={commentModalVisible}
+            onClose={() => setCommentModalVisible(false)}
+            postId={item._id}
+            comments={item.reactions.comments}
+            onAddComment={(message) => handleAddComment(item._id, message)}
+          />
+        )}
+      </View>
+    );
+  };
+
+  const renderHeader = () => (
+    <>
+      <WeatherWidget />
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Fixed Header */}
+      <View style={styles.fixedHeader}>
+        <View style={styles.headerTopContent}>
           <Text style={styles.logoText}>POPULUS</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}
-            onPress={handleNotificationPress}>
-            <Ionicons name="notifications-sharp" size={24} color="#2C3E50" />
-            </TouchableOpacity>
-            <View style={styles.notificationContainer}>
-              <TouchableOpacity 
+            <TouchableOpacity
               style={styles.iconButton}
-              onPress={handleMessagePress}>
-
-                <Entypo name="new-message" size={24} color="#2C3E50" />
-                {/* <View style={styles.notificationBadge}>
-                  <Text style={styles.badgeText}>6</Text>
-                </View> */}
-              </TouchableOpacity>
-            </View>
+              onPress={handleNotificationPress}
+            >
+              <Icon name="notifications-sharp" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleMessagePress}
+            >
+              <Entypo name="new-message" size={24} color={COLORS.text} />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
+        {/* Posts List */}
+        {isLoading ? (
+          <ActivityIndicator
+            size="large"
+            color={COLORS.secondary}
+            style={styles.loader}
+          />
+        ) : (
+          <FlatList
+            data={posts}
+            renderItem={renderPostItem}
+            keyExtractor={(item) => item._id}
+            refreshing={isLoading}
+            onRefresh={fetchPosts}
+            
+            contentContainerStyle={styles.listContainer}
+            ListHeaderComponent={renderHeader}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Icon name="documents-outline" size={48} color={COLORS.subtext} />
+                <Text style={styles.emptyStateText}>
+                  No community posts yet.{'\n'}Be the first to share!
+                </Text>
+              </View>
+            }
+          />
+        )}
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Weather Widget */}
-        <ImageBackground
-          source={require('@/assets/images/sky.jpg')}
-          style={styles.weatherWidget}
-          imageStyle={styles.weatherImage}
-        >
-          <View style={styles.weatherContent}>
-            <View>
-              <Text style={styles.temperature}>19°</Text>
-              <Text style={styles.weather}>Mid Rain</Text>
-            </View>
-            <View style={styles.weatherInfo}>
-              <Text style={styles.city}>Montreal, Canada</Text>
-            </View>
-          </View>
-        </ImageBackground>
-
-        {/* Announcements Section */}
-        <View style={styles.announcementsSection}>
-          <Text style={styles.sectionTitle}>Recent Announcements</Text>
-          
-          <Announcement
-            department="Police Department"
-            time="10:00 am"
-            title="🚨 Traffic Alert 🚨"
-            message="Road closure on Main St. from 3rd Ave to 5th Ave due to an ongoing investigation. Please use alternate routes. Updates will be shared as available."
-          />
-          <Announcement
-            department="Health Department"
-            time="10:00 am"
-            title="Attention:"
-            message="The Health Department advises all residents to take precautions during the flu season. Please get vaccinated, wash your hands frequently, and stay home if you feel unwell."
-          />
-          <Announcement
-            department="Local government"
-            time="10:00 am"
-            title="Notice to All Residents:"
-            message="The local government urges everyone to properly dispose of waste and maintain hygiene to prevent the spread of diseases. Ensure water storage is covered."
-          />
-        </View>
-      </ScrollView>
     </SafeAreaView>
   );
-}
-          
-const Announcement: React.FC<AnnouncementProps> = ({
-  department,
-  time,
-  title,
-  message,
-}) => (
-  <View style={styles.announcement}>
-    <View style={styles.announcementHeader}>
-      <View style={styles.departmentContainer}>
-        <Text style={styles.department}>{department}</Text>
-        <Text style={styles.time}>{time}</Text>
-      </View>
-      <TouchableOpacity style={styles.moreButton}>
-        <FontAwesome name="ellipsis-v" size={16} color="#4A6572" />
-      </TouchableOpacity>
-    </View>
-    <Text style={styles.announcementTitle}>{title}</Text>
-    <Text style={styles.message}>{message}</Text>
-    <View style={styles.reactionIcons}>
-      <TouchableOpacity style={styles.reactionButton}>
-        <FontAwesome name="thumbs-up" size={20} color="#4A6572" />
-        <Text style={styles.reactionCount}>24</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.reactionButton}>
-        <FontAwesome name="thumbs-down" size={20} color="#4A6572" />
-        <Text style={styles.reactionCount}>2</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.reactionButton}>
-        <FontAwesome name="comment" size={20} color="#4A6572" />
-        <Text style={styles.reactionCount}>8</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E9ECEF",
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2C3E50",
-    letterSpacing: 1,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconButton: {
-    padding: 8,
-    marginLeft: 10,
-  },
-  notificationContainer: {
-    position: "relative",
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    backgroundColor: "#DC3545",
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  content: {
-    flex: 1,
-  },
-  weatherImage: {
-    resizeMode: "cover",
-  },
-  weatherWidget: {
-    margin: 16,
-    backgroundColor: "#72A0C1",
-    borderRadius: 16,
-    padding: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  weatherContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    
-  },
-  temperature: {
-    fontSize: 48,
-    fontWeight: "700",
-    color: "#FFFDD0",
-  },
-  city: {
-    fontSize: 18,
-    color: "#FFFDD0",
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  weather: {
-    fontSize: 16,
-    color: "#FFFDD0",
-    fontWeight: "500",
-  },
-  weatherInfo: {
-    alignItems: "flex-end",
-  },
-  announcementsSection: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2C3E50",
-    marginBottom: 16,
-  },
-  announcement: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  announcementHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  departmentContainer: {
-    flex: 1,
-  },
-  department: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2C3E50",
-    marginBottom: 4,
-  },
-  time: {
-    fontSize: 13,
-    color: "#6C757D",
-  },
-  moreButton: {
-    padding: 4,
-  },
-  announcementTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2C3E50",
-    marginBottom: 8,
-  },
-  message: {
-    fontSize: 14,
-    color: "#4A6572",
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  reactionIcons: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#E9ECEF",
-    paddingTop: 12,
-  },
-  reactionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 24,
-  },
-  reactionCount: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#6C757D",
-    fontWeight: "500",
-  },
-});
+export default Home;
