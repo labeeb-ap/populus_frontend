@@ -24,9 +24,8 @@ import { API_URL } from '@/constants/constants';
 import styles from "@/app/(tabs)/Style/homestyle";
 import Entypo from 'react-native-vector-icons/Entypo';
 import Feather from 'react-native-vector-icons/Feather';
-import Share, { ShareSingleOptions } from 'react-native-share';
-import * as Sharing from 'expo-sharing';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
 const COLORS = {
   primary: '#1F3A93',
@@ -53,7 +52,32 @@ interface Department {
   iconFamily: 'MaterialIcons' | 'MaterialCommunityIcons';
 }
 
-
+interface DecodedToken {
+  username: string;
+  userId: string;
+  exp: number;
+  // Add any other properties that might be in your token
+}
+const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!token) {
+      console.log('No token found in AsyncStorage');
+      return { username: 'Anonymous', userId: '0000' }; // Default values
+    }
+    
+    const decodedToken = jwtDecode(token) as DecodedToken;
+    
+    return {
+      username: decodedToken.username || 'Anonymous',
+      userId: decodedToken.userId || '0000'
+    };
+  } catch (error) {
+    console.error('Error getting user information from token:', error);
+    return { username: 'Anonymous', userId: '0000' }; // Default values on error
+  }
+};
 
 const DEPARTMENTS: Department[] = [
   { 
@@ -261,51 +285,6 @@ const CommentModal: React.FC<{
   );
 };
 
-
-
-// const handleShare = async (item) => {
-
-//   console.log(Share.Social);
-//   try {
-//     const shareOptions: ShareSingleOptions = {
-//       title: item.title,
-//       message: item.message,
-//       social: Share.Social.WHATSAPP, // Correct enum value
-//     };
-//     await Share.shareSingle(shareOptions);
-//   } catch (error) {
-//     console.error('Error sharing:', error);
-//   }
-// };
-
-// const WeatherWidget: React.FC = () => {
-//   return (
-//     <View style={styles.weatherWidget}>
-//       <View style={styles.weatherContent}>
-//         <View>
-//           <Text style={styles.temperature}>28°</Text>
-//           <Text style={styles.weather}>Sunny</Text>
-//           <Text style={styles.city}>Your City</Text>
-          
-//           <View style={styles.weatherDetails}>
-//             <View style={styles.weatherDetail}>
-//               <Feather name="droplet" size={14} color={COLORS.white} />
-//               <Text style={styles.weatherDetailText}>42%</Text>
-//             </View>
-//             <View style={styles.weatherDetail}>
-//               <Feather name="wind" size={14} color={COLORS.white} />
-//               <Text style={styles.weatherDetailText}>5.2 mph</Text>
-//             </View>
-//           </View>
-//         </View>
-        
-//         <View style={styles.weatherIconContainer}>
-//           <Icon name="sunny" size={40} color={COLORS.white} />
-//         </View>
-//       </View>
-//     </View>
-//   );
-// };
 const WeatherWidget = () => {
   return (
     <View style={styles.weatherWidget}>
@@ -427,12 +406,13 @@ const WeatherWidget = () => {
 
   const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
     try {
-      const userId = 'authenticated-user-id'; 
+       // Retrieve user info from token
+      const { userId } = await getUserInfoFromToken();
       const response = await axios.post(`${API_URL}/posts/${postId}/reaction`, {
         userId,
         type
       });
-      console.log(response.data);
+      
       //update UI
       setPosts(prevPosts =>
         prevPosts.map(post =>
@@ -456,10 +436,19 @@ const WeatherWidget = () => {
 
   const handleAddComment = async (postId: string, message: string) => {
     try {
+      // Retrieve user info from token
+      const { username } = await getUserInfoFromToken();
+
       const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
-        username: 'Sreekrishnapuram',
+        username,
         message
       });
+       // Extract the comment object from the response
+      const newComment = response.data.comment;
+      // Ensure the comment object is valid
+      if (!newComment || !newComment.username || !newComment.message || !newComment.createdAt) {
+        throw new Error("Invalid comment data returned from API");
+      }
 
       setPosts(prevPosts =>
         prevPosts.map(post => {
@@ -468,9 +457,12 @@ const WeatherWidget = () => {
               ...post,
               reactions: {
                 ...post.reactions,
-                comments: [...post.reactions.comments, {
-                  ...response.data,
-                  createdAt: new Date(response.data.createdAt)
+                comments: [
+                  ...post.reactions.comments,
+                  {
+                    username: newComment.username,
+                    message: newComment.message,
+                    createdAt: new Date(newComment.createdAt)
                 }]
               }
             };
@@ -497,67 +489,6 @@ const WeatherWidget = () => {
       minute: '2-digit'
     });
 
-    //  // Function to handle WhatsApp sharing
-    //  const shareToWhatsApp = async () => {
-    //   // Create formatted message
-    //   let message = "";
-      
-    //   // Add department if available
-    //   if (department) {
-    //     message += `Department name: ${department.name}\n`;
-    //   }
-      
-    //   // Add date
-    //   message += `Date: ${formattedDate}\n`;
-      
-    //   // Add topic (title)
-    //   message += `Topic: ${item.title}\n`;
-      
-    //   // Add content
-    //   message += `Content: ${item.message}`;
-    //   // You can add a link to your app or content if needed
-    //   // message += `\n\nView in app: https://yourapp.com/posts/${item._id}`;
-      
-    //   try {
-    //     // If there's an image, we need to use the Share API
-    //     if (item.imageUri) {
-    //       // For local files, use 'file://' + imageUri
-    //       // For remote images, we might need to download them first
-    //       const shareOptions = {
-    //         title: item.title,
-    //         message: message,
-    //         url: item.imageUri, // This is the image URI
-    //         social: Share.Social.WHATSAPP,
-    //         whatsAppNumber: "", // This can be empty for general sharing
-    //         // The type definition requires the following for completeness
-    //         type: 'image/*',
-    //         filename: 'image'
-    //       };
-          
-    //       await Share.shareSingle(shareOptions);
-    //     } else {
-    //       // If no image, use the regular URL scheme
-    //       const encodedMessage = encodeURIComponent(message);
-    //       const whatsappUrl = `whatsapp://send?text=${encodedMessage}`;
-          
-    //       const canOpen = await Linking.canOpenURL(whatsappUrl);
-    //       if (canOpen) {
-    //         await Linking.openURL(whatsappUrl);
-    //       } else {
-    //         Alert.alert(
-    //           "WhatsApp not installed",
-    //           "Please install WhatsApp to share content."
-    //         );
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('Error sharing to WhatsApp:', error);
-    //     Alert.alert(
-    //       "Sharing failed",
-    //       "There was an error sharing this content. Please try again later."
-    //     );
-    //   }
-    // };
       // Update your share function to use proper typing
       const shareToWhatsApp = async (item: Post) => {
         try {
