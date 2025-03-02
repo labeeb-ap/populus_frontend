@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View,Image, TextInput, Button, StyleSheet, ScrollView, Alert, Text, TouchableOpacity } from 'react-native';
+import { View, Image, TextInput, Button, StyleSheet, ScrollView, Alert, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -13,7 +13,10 @@ interface FormData {
   name: string;
   dateOfBirth: Date | null;
   gender: string;
+  email: string; // New email field
+  income: string; // New income field
   houseDetails: string;
+  wardNumber: string; // New ward number field
   place: string;
   locality: string;
   district: string;
@@ -56,7 +59,10 @@ const SignUpForm: React.FC = () => {
     name: '',
     dateOfBirth: null,
     gender: '',
+    email: '', // New email field initialized
+    income: '', // New income field initialized
     houseDetails: '',
+    wardNumber: '', // New ward number field initialized
     place: '',
     locality: '',
     district: 'Palakkad',
@@ -67,7 +73,7 @@ const SignUpForm: React.FC = () => {
     mappedHouse: '',
     username: '',
     password: '',
-    isOwnerHome: '' ,
+    isOwnerHome: '',
   });
   const [image, setImage] = useState<string | null>(null);
 
@@ -146,6 +152,13 @@ const SignUpForm: React.FC = () => {
         return !value ? 'Date of Birth is required' : '';
       case 'gender':
         return !value ? 'Gender is required' : '';
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return !emailRegex.test(value) ? 'Enter a valid email address' : '';
+      case 'income':
+        return isNaN(Number(value)) ? 'Income must be a number' : '';
+      case 'wardNumber':
+        return !value ? 'Ward number is required' : '';
       case 'mobileNo':
         const mobileRegex = /^[2-9]\d{9}$/;
         return !mobileRegex.test(value) ? 'Enter valid 10-digit mobile number not starting with 0 or 1' : '';
@@ -184,6 +197,7 @@ const SignUpForm: React.FC = () => {
       setIsUsernameChecking(true);
       try {
         const response = await fetch(`${API_URL}/user/check-username/${value}`);
+        console.log(response);
         const data = await response.json();
         if (!data.available) {
           setErrors(prev => ({
@@ -212,7 +226,9 @@ const SignUpForm: React.FC = () => {
       'name',
       'dateOfBirth',
       'gender',
+      'email', // Added email as required
       'houseDetails',
+      'wardNumber', // Added ward number as required
       'place',
       'locality',
       'district',
@@ -244,7 +260,9 @@ const SignUpForm: React.FC = () => {
         formData.name &&
         formData.dateOfBirth &&
         formData.gender &&
+        formData.email && // Added email validation
         formData.houseDetails &&
+        formData.wardNumber && // Added ward number validation
         formData.place &&
         formData.locality &&
         formData.district &&
@@ -252,6 +270,8 @@ const SignUpForm: React.FC = () => {
         formData.aadhaarNo &&
         formData.rationId &&
         !errors.name &&
+        !errors.email && // Added email error check
+        !errors.wardNumber && // Added ward number error check
         !errors.mobileNo &&
         !errors.aadhaarNo &&
         !errors.rationId
@@ -382,6 +402,35 @@ const SignUpForm: React.FC = () => {
             </View>
           </View>
 
+          {/* New Email field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChangeText={value => handleInputChange('email', value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#666"
+            />
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          </View>
+
+          {/* New Income field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Annual Income (₹)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your annual income"
+              value={formData.income}
+              onChangeText={value => handleInputChange('income', value)}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+            {errors.income && <Text style={styles.errorText}>{errors.income}</Text>}
+          </View>
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>House Details</Text>
             <TextInput
@@ -391,6 +440,20 @@ const SignUpForm: React.FC = () => {
               onChangeText={value => handleInputChange('houseDetails', value)}
               placeholderTextColor="#666"
             />
+          </View>
+
+          {/* New Ward Number field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Ward Number</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter ward number"
+              value={formData.wardNumber}
+              onChangeText={value => handleInputChange('wardNumber', value)}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+            {errors.wardNumber && <Text style={styles.errorText}>{errors.wardNumber}</Text>}
           </View>
 
           <View style={styles.inputGroup}>
@@ -562,7 +625,6 @@ const SignUpForm: React.FC = () => {
   </ScrollView>
 );
 };
-
 
 const styles = StyleSheet.create({
   scrollView: {

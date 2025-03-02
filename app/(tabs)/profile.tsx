@@ -82,6 +82,7 @@ const Profile = () => {
     async (config) => {
       try {
         const token = await AsyncStorage.getItem('userToken');
+        console.log("profile token",token);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -136,12 +137,13 @@ const Profile = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+      console.log("response",response);
       if (!response.ok) {
         throw new Error(`Failed to fetch profile data: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log("data",data);
       if (data) {
         // When updating the state with the response data
         setUserProfile({
