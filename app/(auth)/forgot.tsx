@@ -17,13 +17,15 @@ import axios from 'axios';
 import { API_URL } from '@/constants/constants';
 import { NavigationProp } from '@react-navigation/native';
 import styles from '@/app/(auth)/Styles/forgotstyle'
+import { useNavigation } from 'expo-router';
 const { width } = Dimensions.get('window');
+import { useRouter } from 'expo-router';
 
-interface ForgotPasswordProps {
-  navigation: NavigationProp<any>;
-}
 
-export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
+export default function ForgotPassword() {
+
+  const router = useRouter();
+
   // Set method to 'email' only and don't allow changing it
   const [method] = useState<'email'>('email');
   const [email, setEmail] = useState('');
@@ -36,7 +38,9 @@ export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [resetToken, setResetToken] = useState<string | null>(null);
   
+
   // Timer for OTP expiration countdown
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -150,6 +154,7 @@ export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
   };
 
   const handleVerifyOTP = async () => {
+    console.log("verify otp");
     try {
       setError('');
       
@@ -157,29 +162,41 @@ export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
         setError('Please enter the verification code');
         return;
       }
-
-      setIsLoading(true);
-      try{
-        await axios.post(`${API_URL}/user/verify-otp`, {
-          method,
-          email: email.toLowerCase().trim(),
-          otp: otp.trim()
-        });
   
-        setStep(3);
-      }catch (apiError: any) {
-        console.error("API Error:", apiError);
+      setIsLoading(true);
+  
+      // Debug: Log the payload being sent
+      console.log("Sending OTP verification request with payload:", {
+        email: email.toLowerCase().trim(),
+        otp: otp.trim(),
+      });
+  
+      const response = await axios.post(`${API_URL}/user/verify-otp`, {
+        email: email.toLowerCase().trim(),
+        otp: otp.trim(),
+      });
+  
+      // Debug: Log the response from the backend
+      console.log("OTP verification response:", response.data);
+      console.log("Full response:", response);
+      console.log("Response data:", response.data);
+      console.log("Reset token in response:", response.data.resetToken);
+       // Store the reset token from the response
+      if (response.data.resetToken) {
         
-        if (apiError.response && apiError.response.data && apiError.response.data.message) {
-          setError(apiError.response.data.message);
-        } else {
-          setError('Invalid verification code. Please try again.');
-        }
+        
+        setResetToken(response.data.resetToken);
+        console.log(response.data.resetToken);
+      }else{
+        console.error("Reset token not found in response:", response.data); // Debug log
       }
+
+      setStep(3);
+    } catch (apiError: any) {
+      console.error("API Error:", apiError);
       
-    } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.message) {
-        setError(error.response.data.message);
+      if (apiError.response && apiError.response.data && apiError.response.data.message) {
+        setError(apiError.response.data.message);
       } else {
         setError('Invalid verification code. Please try again.');
       }
@@ -207,21 +224,29 @@ export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
         return;
       }
 
+      if (!resetToken) {
+      setError('Reset token is missing. Please verify your OTP again.');
+      return;
+    }
+
       setIsLoading(true);
       try{
-        await axios.post(`${API_URL}/user/reset-password`, {
-          method,
-          email: email.toLowerCase().trim(),
-          otp: otp.trim(),
-          password: newPassword
+        const response = await axios.post(`${API_URL}/user/reset-password`, {
+          resetToken, // Include the reset token
+          newPassword, // Use the correct field name as expected by the backend
         });
-  
-        // Show success message and navigate back
-        setTimeout(() => {
-          navigation.navigate('Login', { 
+
+         console.log("Reset password response:", response.data);
+
+       // Show success message and navigate back
+      setTimeout(() => {
+        router.push({
+          pathname: '/(auth)/sign_in',
+          params: { 
             message: 'Password reset successful. Please login with your new password.' 
-          });
-        }, 2000);
+          }
+        });
+      }, 2000);
       } catch (apiError: any) {
         console.error("API Error:", apiError);
         
@@ -484,4 +509,4 @@ export default function ForgotPassword({ navigation }: ForgotPasswordProps) {
       </SafeAreaView>
     );
   }
-}
+} 
