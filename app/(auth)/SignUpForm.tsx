@@ -28,6 +28,7 @@ interface FormData {
   username: string;
   password: string;
   isOwnerHome: string; 
+  occupation: string;
 }
 
 interface ValidationErrors {
@@ -47,6 +48,18 @@ const DISTRICT_PLACES: { [key: string]: { [key: string]: string[] } } = {
   },
   // Add other districts
 };
+const OCCUPATION_OPTIONS = [
+  'Farmer',
+  'Teacher',
+  'Engineer',
+  'Doctor',
+  'Business',
+  'Government Employee',
+  'Private Employee',
+  'Student',
+  'Homemaker',
+  'Others',
+];
 
 const SignUpForm: React.FC = () => {
   const router = useRouter();
@@ -74,6 +87,7 @@ const SignUpForm: React.FC = () => {
     username: '',
     password: '',
     isOwnerHome: '',
+    occupation: '', 
   });
   const [image, setImage] = useState<string | null>(null);
 
@@ -152,6 +166,8 @@ const SignUpForm: React.FC = () => {
         return !value ? 'Date of Birth is required' : '';
       case 'gender':
         return !value ? 'Gender is required' : '';
+      case 'occupation':
+          return !value ? 'Occupation is required' : '';
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return !emailRegex.test(value) ? 'Enter a valid email address' : '';
@@ -237,7 +253,8 @@ const SignUpForm: React.FC = () => {
       'rationId',
       'username',
       'password',
-      'mappedHouse'
+      'mappedHouse',
+      'occupation',
     ];
     requiredFields.forEach((field) => {
       if (!formData[field]) {
@@ -269,12 +286,14 @@ const SignUpForm: React.FC = () => {
         formData.mobileNo &&
         formData.aadhaarNo &&
         formData.rationId &&
+        formData.occupation && 
         !errors.name &&
         !errors.email && // Added email error check
         !errors.wardNumber && // Added ward number error check
         !errors.mobileNo &&
         !errors.aadhaarNo &&
-        !errors.rationId
+        !errors.rationId&&
+        !errors.occupation
       );
     }
     return true;
@@ -456,6 +475,22 @@ const SignUpForm: React.FC = () => {
             {errors.wardNumber && <Text style={styles.errorText}>{errors.wardNumber}</Text>}
           </View>
 
+          <View style={styles.inputGroup}>
+          <Text style={styles.label}>Occupation</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.occupation}
+              onValueChange={value => handleInputChange('occupation', value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select Occupation" value="" />
+              {OCCUPATION_OPTIONS.map((occupation) => (
+                <Picker.Item key={occupation} label={occupation} value={occupation} />
+              ))}
+            </Picker>
+          </View>
+          {errors.occupation && <Text style={styles.errorText}>{errors.occupation}</Text>}
+        </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Location Details</Text>
             <View style={styles.pickerContainer}>
