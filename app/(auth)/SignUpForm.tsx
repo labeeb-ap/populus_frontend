@@ -27,6 +27,7 @@ interface FormData {
   mappedHouse: string;
   username: string;
   password: string;
+  confirmPassword: string; 
   isOwnerHome: string; 
   occupation: string;
 }
@@ -86,6 +87,7 @@ const SignUpForm: React.FC = () => {
     mappedHouse: '',
     username: '',
     password: '',
+    confirmPassword: '',
     isOwnerHome: '',
     occupation: '', 
   });
@@ -190,6 +192,8 @@ const SignUpForm: React.FC = () => {
       case 'password':
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
         return !passwordRegex.test(value) ? 'Password must be 8 characters with letters, numbers, and special characters' : '';
+        case 'confirmPassword':
+          return value !== formData.password ? 'Passwords do not match' : ''; // Add this line
       case 'isOwnerHome':
           return !value ? 'Please specify if this is the ration card owner\'s home' : '';
       default:
@@ -212,9 +216,13 @@ const SignUpForm: React.FC = () => {
     if (field === 'username' && value) {
       setIsUsernameChecking(true);
       try {
+        console.log('Checking username:', value);
         const response = await fetch(`${API_URL}/user/check-username/${value}`);
-        console.log(response);
+        console.log('Response status:', response.status);
+      
+     
         const data = await response.json();
+        console.log('Response data:', data);
         if (!data.available) {
           setErrors(prev => ({
             ...prev,
@@ -253,6 +261,7 @@ const SignUpForm: React.FC = () => {
       'rationId',
       'username',
       'password',
+      'confirmPassword', 
       'mappedHouse',
       'occupation',
     ];
@@ -450,30 +459,9 @@ const SignUpForm: React.FC = () => {
             {errors.income && <Text style={styles.errorText}>{errors.income}</Text>}
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>House Details</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="House No/Name"
-              value={formData.houseDetails}
-              onChangeText={value => handleInputChange('houseDetails', value)}
-              placeholderTextColor="#666"
-            />
-          </View>
+          
 
-          {/* New Ward Number field */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Ward Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter ward number"
-              value={formData.wardNumber}
-              onChangeText={value => handleInputChange('wardNumber', value)}
-              keyboardType="numeric"
-              placeholderTextColor="#666"
-            />
-            {errors.wardNumber && <Text style={styles.errorText}>{errors.wardNumber}</Text>}
-          </View>
+          
 
           <View style={styles.inputGroup}>
           <Text style={styles.label}>Occupation</Text>
@@ -531,6 +519,30 @@ const SignUpForm: React.FC = () => {
                 ))}
               </Picker>
             </View>
+
+            {/* New Ward Number field */}
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter ward number"
+              value={formData.wardNumber}
+              onChangeText={value => handleInputChange('wardNumber', value)}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+            {errors.wardNumber && <Text style={styles.errorText}>{errors.wardNumber}</Text>}
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>House Details</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="House No/Name"
+              value={formData.houseDetails}
+              onChangeText={value => handleInputChange('houseDetails', value)}
+              placeholderTextColor="#666"
+            />
+          </View>
+
           </View>
 
           <View style={styles.inputGroup}>
@@ -602,8 +614,18 @@ const SignUpForm: React.FC = () => {
               placeholderTextColor="#666"
             />
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {/* Add Confirm Password Field */}
+      <TextInput
+        style={styles.input}
+        placeholder="Confirm Password"
+        value={formData.confirmPassword}
+        secureTextEntry
+        onChangeText={value => handleInputChange('confirmPassword', value)}
+        placeholderTextColor="#666"
+      />
+      {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
-
+          
           {formData.photo ? (
             <Image source={{ uri: formData.photo }} style={styles.imagePreview} />
           ) : (
