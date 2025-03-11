@@ -1,5 +1,4 @@
-// MapScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -17,41 +16,62 @@ interface MapScreenProps {
 const MapScreen: React.FC<MapScreenProps> = ({ onLocationSelect }) => {
   const [selectedLocation, setSelectedLocation] = useState<LocationCoords | null>(null);
   const [currentLocation, setCurrentLocation] = useState({
-    latitude: 10.9034047,
-    longitude: 76.4346481,
+    latitude: 10.9034047, // Default fallback location
+    longitude: 76.4346481, // Default fallback location
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
 
-  const getCurrentLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permission denied');
-      return;
-    }
+  // Fetch the user's current location when the component mounts
+  useEffect(() => {
+    const fetchCurrentLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        return;
+      }
 
-    const location = await Location.getCurrentPositionAsync({});
-    const newLocation = {
-      ...currentLocation,
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.BestForNavigation, // Use high accuracy
+      });
+
+      const newLocation = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+
+      setCurrentLocation(newLocation);
+      setSelectedLocation(newLocation);
+
+      // Format latitude and longitude to 15 decimal places
+      const formattedLatitude = location.coords.latitude.toFixed(15);
+      const formattedLongitude = location.coords.longitude.toFixed(15);
+
+      onLocationSelect(`Latitude: ${formattedLatitude}, Longitude: ${formattedLongitude}`);
     };
-    setCurrentLocation(newLocation);
-    setSelectedLocation(newLocation);
-    onLocationSelect(`Latitude: ${location.coords.latitude}, Longitude: ${location.coords.longitude}`);
-  };
+
+    fetchCurrentLocation();
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleMapPress = (e: any) => {
     const coords = e.nativeEvent.coordinate;
     setSelectedLocation(coords);
-    onLocationSelect(`Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`);
+
+    // Format latitude and longitude to 15 decimal places
+    const formattedLatitude = coords.latitude.toFixed(15);
+    const formattedLongitude = coords.longitude.toFixed(15);
+
+    onLocationSelect(`Latitude: ${formattedLatitude}, Longitude: ${formattedLongitude}`);
   };
 
   return (
     <View style={styles.mapContainer}>
       <MapView
         style={styles.map}
-        initialRegion={currentLocation}
+        initialRegion={currentLocation} // Set initial region to current location
+        region={currentLocation} // Keep the map centered on the current location
         onPress={handleMapPress}
         mapType="hybrid"
       >
@@ -59,16 +79,34 @@ const MapScreen: React.FC<MapScreenProps> = ({ onLocationSelect }) => {
           <Marker
             coordinate={{
               latitude: selectedLocation.latitude!,
-              longitude: selectedLocation.longitude!
+              longitude: selectedLocation.longitude!,
             }}
             title="Selected Location"
-            description={`${selectedLocation.latitude}, ${selectedLocation.longitude}`}
+            description={`${selectedLocation.latitude?.toFixed(15)}, ${selectedLocation.longitude?.toFixed(15)}`}
           />
         )}
       </MapView>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.button}
-        onPress={getCurrentLocation}
+        onPress={async () => {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.BestForNavigation,
+          });
+          const newLocation = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          };
+          setCurrentLocation(newLocation);
+          setSelectedLocation(newLocation);
+
+          // Format latitude and longitude to 15 decimal places
+          const formattedLatitude = location.coords.latitude.toFixed(15);
+          const formattedLongitude = location.coords.longitude.toFixed(15);
+
+          onLocationSelect(`Latitude: ${formattedLatitude}, Longitude: ${formattedLongitude}`);
+        }}
       >
         <Text style={styles.buttonText}>Get Current Location</Text>
       </TouchableOpacity>

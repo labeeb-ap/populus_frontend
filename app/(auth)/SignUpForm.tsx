@@ -30,6 +30,7 @@ interface FormData {
   confirmPassword: string; 
   isOwnerHome: string; 
   occupation: string;
+  rationcardType: string;
 }
 
 interface ValidationErrors {
@@ -59,7 +60,14 @@ const OCCUPATION_OPTIONS = [
   'Private Employee',
   'Student',
   'Homemaker',
+  'Kooli',
   'Others',
+];
+const rationcardColor =[
+  'Yellow',
+  'Pink',
+  'Blue',
+  'White',
 ];
 
 const SignUpForm: React.FC = () => {
@@ -90,6 +98,7 @@ const SignUpForm: React.FC = () => {
     confirmPassword: '',
     isOwnerHome: '',
     occupation: '', 
+    rationcardType: '',
   });
   const [image, setImage] = useState<string | null>(null);
 
@@ -196,6 +205,9 @@ const SignUpForm: React.FC = () => {
           return value !== formData.password ? 'Passwords do not match' : ''; // Add this line
       case 'isOwnerHome':
           return !value ? 'Please specify if this is the ration card owner\'s home' : '';
+        case 'rationcardType':
+            return !value ? 'Ration card type is required' : '';
+      
       default:
         return '';
     }
@@ -262,8 +274,9 @@ const SignUpForm: React.FC = () => {
       'username',
       'password',
       'confirmPassword', 
-      'mappedHouse',
+    
       'occupation',
+      'rationcardType',
     ];
     requiredFields.forEach((field) => {
       if (!formData[field]) {
@@ -295,6 +308,7 @@ const SignUpForm: React.FC = () => {
         formData.mobileNo &&
         formData.aadhaarNo &&
         formData.rationId &&
+        formData.rationcardType&&
         formData.occupation && 
         !errors.name &&
         !errors.email && // Added email error check
@@ -580,7 +594,22 @@ const SignUpForm: React.FC = () => {
             />
             {errors.rationId && <Text style={styles.errorText}>{errors.rationId}</Text>}
           </View>
-
+          <View style={styles.inputGroup}>
+        <Text style={styles.label}>Ration Card Type</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.rationcardType}
+            onValueChange={value => handleInputChange('rationcardType', value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Ration Card Type" value="" />
+            {rationcardColor.map((color) => (
+              <Picker.Item key={color} label={color} value={color} />
+            ))}
+          </Picker>
+        </View>
+        {errors.rationcardType && <Text style={styles.errorText}>{errors.rationcardType}</Text>}
+        </View>
           <TouchableOpacity
             style={[styles.button, !isStepValid() && styles.buttonDisabled]}
             onPress={handleNext}
@@ -634,28 +663,39 @@ const SignUpForm: React.FC = () => {
             </TouchableOpacity>
       )}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Residence Verification</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.isOwnerHome}
-                onValueChange={value => handleInputChange('isOwnerHome', value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Is this the Ration Card Owner's Home?" value="" />
-                <Picker.Item label="Yes" value="yes" />
-                <Picker.Item label="No" value="no" />
-              </Picker>
-            </View>
-            {errors.isOwnerHome && <Text style={styles.errorText}>{errors.isOwnerHome}</Text>}
+          
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Residence Verification</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.isOwnerHome}
+              onValueChange={value => handleInputChange('isOwnerHome', value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Is this the Ration Card Owner's Home?" value="" />
+              <Picker.Item label="Yes" value="yes" />
+              <Picker.Item label="No" value="no" />
+            </Picker>
           </View>
-
+          {errors.isOwnerHome && <Text style={styles.errorText}>{errors.isOwnerHome}</Text>}
+        </View>
+            {/* Conditionally render the House Location section */}
+        {formData.isOwnerHome === 'yes' ? (
           <View style={styles.inputGroup}>
             <Text style={styles.label}>House Location</Text>
             <View style={styles.mapContainer}>
               <MapScreen onLocationSelect={location => handleInputChange('mappedHouse', location)} />
             </View>
           </View>
+        ) : formData.isOwnerHome === 'no' ? (
+          <View style={styles.inputGroup}>
+            <Text style={styles.infoText}>
+              Your location will be mapped to your house owner. Please inform the owner to select the location.
+            </Text>
+          </View>
+        ) : null}
+
+         
 
           <View style={styles.buttonRow}>
             <TouchableOpacity 
@@ -691,6 +731,13 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     backgroundColor: '#f5f5f5',
+  },
+  infoText: {
+    color: '#666',
+    fontSize: 14,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 10,
   },
   formTitle: {
     fontSize: 24,
