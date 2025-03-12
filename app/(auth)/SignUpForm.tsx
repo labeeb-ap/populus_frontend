@@ -45,8 +45,8 @@ const KERALA_DISTRICTS = [
 
 const DISTRICT_PLACES: { [key: string]: { [key: string]: string[] } } = {
   'Palakkad': {
-    'Palakkad Town': ['Olavakkode', 'Stadium Puthur', 'Chandranagar'],
-    'Ottapalam': ['Vandazhi', 'Lakkidi', 'Shornur'],
+    'Panchayat Department': ['SREEKRISHNAPURAM', 'MALAMPUZHA', 'THENKARA'],
+    'Muncipalities': ['MANNARKKAD', 'CHERPULASSERY', 'PATTAMBI'],
   },
   // Add other districts
 };
@@ -79,7 +79,7 @@ const SignUpForm: React.FC = () => {
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    dateOfBirth: null,
+    dateOfBirth:  new Date(2000, 0, 1),
     gender: '',
     email: '', // New email field initialized
     income: '', // New income field initialized
@@ -513,7 +513,7 @@ const SignUpForm: React.FC = () => {
                 onValueChange={value => handleInputChange('place', value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Select Place" value="" />
+                <Picker.Item label="Select Local Self Government" value="" />
                 {DISTRICT_PLACES[formData.district] &&
                   Object.keys(DISTRICT_PLACES[formData.district]).map(place => (
                     <Picker.Item key={place} label={place} value={place} />
