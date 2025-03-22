@@ -55,27 +55,29 @@ interface Department {
 interface DecodedToken {
   username: string;
   userId: string;
+  presidentId:string, 
   exp: number;
   // Add any other properties that might be in your token
 }
-const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
+const getUserInfoFromToken = async (): Promise<{ username: string; userId: string,access: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
     
     if (!token) {
       console.log('No token found in AsyncStorage');
-      return { username: 'Anonymous', userId: '0000' }; // Default values
+      return { username: 'Anonymous', userId: '0000',access:'Null' }; // Default values
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
     
     return {
       username: decodedToken.username || 'Anonymous',
-      userId: decodedToken.userId || '0000'
+      userId: decodedToken.userId || '0000',
+      access:decodedToken.presidentId||'Null', 
     };
   } catch (error) {
     console.error('Error getting user information from token:', error);
-    return { username: 'Anonymous', userId: '0000' }; // Default values on error
+    return { username: 'Anonymous', userId: '0000',access: 'Null' }; // Default values on error
   }
 };
 
@@ -321,25 +323,6 @@ const WeatherWidget = () => {
           </View>
         </View>
         
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailItem}>
-            <Feather name="droplet" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Humidity</Text>
-            <Text style={styles.detailValue}>42%</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="wind" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Wind</Text>
-            <Text style={styles.detailValue}>5.2 mph</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="sun" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>UV Index</Text>
-            <Text style={styles.detailValue}>7 High</Text>
-          </View>
-        </View>
       </View>
     </View>
   );
@@ -372,7 +355,16 @@ const WeatherWidget = () => {
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/posts/display`);
+      // Get user info, including the access value
+      const userInfo = await getUserInfoFromToken();
+      const access = userInfo.access; // Extract the access value
+
+      // Make the axios request with the access parameter
+      const response = await axios.get(`${API_URL}/posts/display`, {
+          params: {
+              access: access // Pass the access value from the token
+          }
+      });
       const transformedPosts = response.data.announcements.map((post: any) => ({
         _id: post._id,
         department: post.department,
