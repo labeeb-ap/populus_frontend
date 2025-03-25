@@ -45,8 +45,8 @@ const KERALA_DISTRICTS = [
 
 const DISTRICT_PLACES: { [key: string]: { [key: string]: string[] } } = {
   'Palakkad': {
-    'Panchayat Department': ['SREEKRISHNAPURAM', 'MALAMPUZHA', 'THENKARA'],
-    'Muncipalities': ['MANNARKKAD', 'CHERPULASSERY', 'PATTAMBI'],
+    'Panchayat Department': ['SREEKRISHNAPURAM', 'MALAMPUZHA',  "MUNDUR","KARIMPUZHA",],
+    'Muncipalities': ['MANNARKKAD', 'CHERPULASSERY', 'PATTAMBI',"PALAKKAD",],
   },
   // Add other districts
 };
