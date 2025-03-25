@@ -1,42 +1,46 @@
 import React, { useState, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  ScrollView, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  Alert 
 } from 'react-native';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/constants';
+import { useSurvey } from '../context/SurveyContext';
 
-// Define the interface for the survey data
 interface SurveyItem {
   _id: string;
   title: string;
   question: string;
   options: string[];
   creator: string;
-  profile: string;
   active: boolean;
   createdAt: string;
 }
 
 const Survey = () => {
   const [publicSurveys, setPublicSurveys] = useState<SurveyItem[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>({}); // Track selected options
-  const [completedSurveys, setCompletedSurveys] = useState<{ [key: string]: boolean }>({}); // Track completed surveys
+  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>({}); 
+  const [completedSurveys, setCompletedSurveys] = useState<{ [key: string]: boolean }>({});
+  const { checkPendingSurveys } = useSurvey();
 
-  // Fetch data whenever the screen is focused
+  const handleOptionSelect = (surveyId: string, option: string) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [surveyId]: option,
+    }));
+  };
+
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        console.log('Fetching data...'); // Debugging log
         const token = await AsyncStorage.getItem('userToken');
-        console.log('Token:', token); // Debugging log
 
         if (!token) {
           alert('User token not found. Please log in again.');
@@ -52,20 +56,15 @@ const Survey = () => {
             },
           });
 
-          console.log('Response status:', response.status); // Debugging log
-
           if (!response.ok) {
             throw new Error(`Failed to fetch surveys: ${response.statusText}`);
           }
 
           const data = await response.json();
-          console.log('API Response:', data); // Debugging log
 
           if (Array.isArray(data.surveys)) {
-            setPublicSurveys(data.surveys); // Set the surveys array
-          } else {
-            console.error('API did not return an array:', data);
-            alert('Unexpected response format from the server.');
+            setPublicSurveys(data.surveys);
+            checkPendingSurveys(data.surveys, completedSurveys);
           }
         } catch (error) {
           console.error('Error fetching surveys:', error);
@@ -74,18 +73,9 @@ const Survey = () => {
       };
 
       fetchData();
-    }, []) // Empty dependency array ensures the effect runs only on focus
+    }, [completedSurveys, checkPendingSurveys])
   );
 
-  // Handle option selection
-  const handleOptionSelect = (surveyId: string, option: string) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [surveyId]: option, // Update the selected option for the survey
-    }));
-  };
-
-  // Handle marking the poll as done
   const handleDone = async (surveyId: string) => {
     const selectedOption = selectedOptions[surveyId];
 
@@ -101,7 +91,6 @@ const Survey = () => {
         return;
       }
 
-      // Send the selected option and survey ID to the backend
       const response = await fetch(`${API_URL}/user/submit-survey`, {
         method: 'POST',
         headers: {
@@ -121,11 +110,13 @@ const Survey = () => {
       const data = await response.json();
       console.log('Survey submitted successfully:', data);
 
-      // Mark the survey as completed
-      setCompletedSurveys((prev) => ({
-        ...prev,
-        [surveyId]: true,
-      }));
+      const newCompletedSurveys = {
+        ...completedSurveys,
+        [surveyId]: true
+      };
+
+      setCompletedSurveys(newCompletedSurveys);
+      checkPendingSurveys(publicSurveys, newCompletedSurveys);
 
       Alert.alert('Success', 'Your response has been submitted successfully.');
     } catch (error) {
@@ -134,27 +125,20 @@ const Survey = () => {
     }
   };
 
-  // Render each survey card
   const renderSurveyCard = (survey: SurveyItem) => {
-    const isCompleted = completedSurveys[survey._id]; // Check if the survey is completed
+    const isCompleted = completedSurveys[survey._id];
 
     return (
       <View key={survey._id} style={styles.surveyCard}>
-        {/* Profile Section */}
-        <View style={styles.profileContainer}>
-          <View style={styles.profileImagePlaceholder}>
-            <FontAwesome name="user-circle" size={40} color="#4A6572" />
-          </View>
-          <Text style={styles.profileName}>{survey.profile}</Text>
+        <View style={styles.surveyHeader}>
+          <Text style={styles.surveyTitle}>{survey.title}</Text>
+          <Text style={styles.surveyDate}>
+            {new Date(survey.createdAt).toLocaleDateString()}
+          </Text>
         </View>
 
-        {/* Survey Title */}
-        <Text style={styles.surveyTitle}>{survey.title}</Text>
+        <Text style={styles.surveyQuestion}>{survey.question}</Text>
 
-        {/* Survey Question */}
-        <Text style={styles.description}>{survey.question}</Text>
-
-        {/* Options */}
         <View style={styles.optionsContainer}>
           {survey.options.map((option, index) => (
             <TouchableOpacity
@@ -162,16 +146,18 @@ const Survey = () => {
               style={[
                 styles.optionButton,
                 selectedOptions[survey._id] === option && styles.selectedOptionButton,
-                isCompleted && styles.disabledOptionButton, // Disable interaction if completed
+                isCompleted && styles.disabledOptionButton,
               ]}
               onPress={() => handleOptionSelect(survey._id, option)}
-              disabled={isCompleted} // Disable interaction if completed
+              disabled={isCompleted}
             >
               <Text
                 style={[
                   styles.optionText,
                   selectedOptions[survey._id] === option && styles.selectedOptionText,
                 ]}
+                numberOfLines={3}
+                ellipsizeMode="tail"
               >
                 {option}
               </Text>
@@ -179,20 +165,22 @@ const Survey = () => {
           ))}
         </View>
 
-        {/* Done Button */}
-        {!isCompleted && (
+        {!isCompleted ? (
           <TouchableOpacity
-            style={styles.doneButton}
+            style={[
+              styles.doneButton,
+              !selectedOptions[survey._id] && styles.disabledDoneButton
+            ]}
             onPress={() => handleDone(survey._id)}
-            disabled={!selectedOptions[survey._id]} // Disable if no option is selected
+            disabled={!selectedOptions[survey._id]}
           >
-            <Text style={styles.doneButtonText}>Done</Text>
+            <Text style={styles.doneButtonText}>Submit Response</Text>
           </TouchableOpacity>
-        )}
-
-        {/* Completed Message */}
-        {isCompleted && (
-          <Text style={styles.completedText}>You have completed this survey.</Text>
+        ) : (
+          <View style={styles.completedContainer}>
+            <MaterialIcons name="check-circle" size={24} color="#28A745" />
+            <Text style={styles.completedText}>Survey Completed</Text>
+          </View>
         )}
       </View>
     );
@@ -203,22 +191,25 @@ const Survey = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Surveys</Text>
         <TouchableOpacity style={styles.filterButton}>
-          <FontAwesome name="filter" size={20} color="#2C3E50" />
+          <MaterialIcons name="filter-list" size={24} color="#2C3E50" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         {publicSurveys.map(renderSurveyCard)}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// Styles (same as before)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F4F7F9',
   },
   header: {
     flexDirection: 'row',
@@ -228,7 +219,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
+    borderBottomColor: '#E1E5E8',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   headerTitle: {
     fontSize: 24,
@@ -240,66 +236,61 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+  },
+  scrollViewContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
   },
   surveyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  profileContainer: {
+  surveyHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileImagePlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#E9ECEF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  profileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C3E50',
+    marginBottom: 12,
   },
   surveyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#2C3E50',
-    marginBottom: 12,
+    flex: 0.7,
   },
-  description: {
-    fontSize: 14,
+  surveyDate: {
+    fontSize: 12,
+    color: '#6C757D',
+    textAlign: 'right',
+  },
+  surveyQuestion: {
+    fontSize: 16,
     color: '#4A6572',
-    lineHeight: 20,
     marginBottom: 16,
+    lineHeight: 24,
   },
   optionsContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   optionButton: {
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E9ECEF',
-    marginBottom: 8,
+    borderColor: '#E1E5E8',
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   selectedOptionButton: {
-    borderColor: '#F28C28',
-    backgroundColor: '#FFF3E0',
+    borderColor: '#007BFF',
+    backgroundColor: '#E7F1FF',
   },
   disabledOptionButton: {
     opacity: 0.6,
@@ -307,26 +298,39 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     color: '#4A6572',
+    flex: 1,
   },
   selectedOptionText: {
-    color: '#F28C28',
+    color: '#007BFF',
+    fontWeight: '600',
   },
   doneButton: {
-    backgroundColor: '#F28C28',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
+  },
+  disabledDoneButton: {
+    backgroundColor: '#B0C4DE',
   },
   doneButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
+  completedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E9ECEF',
+    padding: 15,
+    borderRadius: 10,
+  },
   completedText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#28A745',
-    textAlign: 'center',
-    marginTop: 12,
+    marginLeft: 10,
+    fontWeight: '600',
   },
 });
 

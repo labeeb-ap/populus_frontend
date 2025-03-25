@@ -1,27 +1,24 @@
-import { Alert, StyleSheet, Text, View, Dimensions, Image } from 'react-native';
+import { Alert, StyleSheet, Text, View, Image } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/constants';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type RootStackParamList = {
+  Map: undefined;
+  HouseDetails: {
+    houseDetails: string;
+    wardNumber: string;
+    rationId: string;
+  };
+};
 
 interface LocationData {
-  _id: string;
-  name: string;
-  dateOfBirth: string;
-  gender: string;
   houseDetails: string;
-  place: string;
-  locality: string;
-  district: string;
-  mobileNo: string;
-  aadhaarNo: string;
   rationId: string;
-  photo: string;
+  wardNumber: string;
   mappedHouse: string;
-  verified: boolean;
-  __v: number;
-  username?: string;
-  password?: string;
 }
 
 interface FormattedLocation {
@@ -30,24 +27,40 @@ interface FormattedLocation {
     latitude: number;
     longitude: number;
   };
-  title: string;
-  description: string;
   houseDetails: string;
+  wardNumber: string;
+  rationId: string;
 }
+
+// Color palette for ward numbers (15 distinct colors)
+const WARD_COLORS = [
+  '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF',
+  '#00FFFF', '#FFA500', '#A52A2A', '#800080', '#008000',
+  '#000080', '#808000', '#800000', '#008080', '#000000'
+];
 
 function Map() {
   const [locations, setLocations] = useState<FormattedLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
   useEffect(() => {
     const fetchData = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        alert("User token not found. Please log in again.");
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/user/map`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
           },
         });
 
@@ -63,7 +76,7 @@ function Map() {
         }
 
         const formattedLocations: FormattedLocation[] = dataArray
-          .filter((item: LocationData) => item?.mappedHouse)
+          .filter((item: LocationData) => item?.mappedHouse && item.mappedHouse.includes('Latitude'))
           .map((item: LocationData, index: number) => {
             try {
               const latMatch = item.mappedHouse.match(/Latitude:\s*([-\d.]+)/);
@@ -81,28 +94,25 @@ function Map() {
               }
 
               return {
-                id: item._id,
-                coordinate: {
-                  latitude,
-                  longitude,
-                },
-                title: `House ${index + 1}`,
-                description: `${item.name}'s House`,
-                houseDetails: item.houseDetails || 'No house details available',
+                id: `${index}_${item.houseDetails}`,
+                coordinate: { latitude, longitude },
+                houseDetails: item.houseDetails || 'No details',
+                wardNumber: item.wardNumber || '0',
+                rationId: item.rationId || 'Not available'
               };
             } catch (err) {
               console.error(`Error processing item ${index}:`, err);
               return null;
             }
           })
-          .filter((location): location is FormattedLocation => location !== null);
+          .filter(Boolean) as FormattedLocation[];
 
         setLocations(formattedLocations);
         setError(null);
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        Alert.alert('Error', 'Something went wrong while fetching data');
+        Alert.alert('Error', 'Failed to load map data');
       } finally {
         setLoading(false);
       }
@@ -118,9 +128,17 @@ function Map() {
     longitudeDelta: 0.02,
   };
 
+  const handleMarkerPress = (houseDetails: string, wardNumber: string, rationId: string) => {
+    navigation.navigate('HouseDetails', { 
+      houseDetails, 
+      wardNumber, 
+      rationId 
+    });
+  };
+
   if (loading) {
     return (
-      <View >
+      <View style={styles.loadingContainer}>
         <Text>Loading map data...</Text>
       </View>
     );
@@ -128,8 +146,8 @@ function Map() {
 
   if (error) {
     return (
-      <View >
-        <Text>Error: {error}</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
@@ -146,59 +164,84 @@ function Map() {
         showsScale={true}
         mapType="hybrid"
       >
-        {locations.map((marker: FormattedLocation) => (
-          <Marker
-            key={marker.id}
-            coordinate={marker.coordinate}
-            anchor={{ x: 2, y: 2 }} // Adjust the anchor point for positioning
-          >
-            <View style={{ alignItems: 'center' }}>
-              <Image
-                source={require('@/assets/images/custom-marker.png')}
-                style={{ width: 10, height: 10, resizeMode: 'contain' }} // Resize the image here
-              />
-              <View style={styles.markerTextContainer}>
-                <Text style={styles.markerText}>{marker.houseDetails}</Text>
+        {locations.map((marker) => {
+          const wardIndex = parseInt(marker.wardNumber) - 1;
+          const wardColor = WARD_COLORS[wardIndex >= 0 && wardIndex < WARD_COLORS.length ? wardIndex : 0];
+          
+          return (
+            <Marker
+              key={marker.id}
+              coordinate={marker.coordinate}
+             
+            >
+              <View style={styles.markerContainer}>
+                <Image
+                  source={require('@/assets/images/custom-marker.png')}
+                  style={styles.markerIcon}
+                />
+                <View style={[styles.markerNumberContainer, { backgroundColor: wardColor }]}>
+                  <Text style={styles.markerNumberText}>
+                    {marker.houseDetails}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </Marker>
-        ))}
+            </Marker>
+          );
+        })}
       </MapView>
     </View>
-  
   );
-  
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f0f0f0', // Neutral background to highlight the map
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    
-    map: {
-      ...StyleSheet.absoluteFillObject, // Ensures the map fills the screen
-    },
-    markerTextContainer: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
-      borderRadius: 8,
-      padding: 4,
-      borderWidth: 1,
-      borderColor: '#d4d4d4', // Light border for better visibility
-    },
-    markerText: {
-      color: 'blue', // Dark red text color
-      fontSize: 15, // Slightly smaller font size for better fit
-      fontWeight: 'bold', // Bold for emphasis
-      textAlign: 'center', // Center align the text
-    },
-  });
-      
-      
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
+  markerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
+  markerNumberContainer: {
+    marginTop: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  markerNumberText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+});
 
 export default Map;

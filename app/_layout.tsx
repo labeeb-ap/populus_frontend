@@ -1,23 +1,20 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import {Slot,Stack} from 'expo-router';
+import { Stack } from 'expo-router';
+import React from 'react';
+import SurveyProvider from './context/SurveyContext';
+import SurveyNotification from '@/components/SurveyNotification';
 
 const RootLayout = () => {
-  return(
-    <Stack>
-      <Stack.Screen name="index" options={{headerShown: false}} />
-      <Stack.Screen name="(auth)" options={{headerShown: false}} />
-      <Stack.Screen name="(tabs)" options={{headerShown: false}} />
-      <Stack.Screen name="(service)" options={{headerShown: false}} />
-      
-    </Stack>
+  return (
+    <SurveyProvider>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(service)" options={{ headerShown: false }} />
+      </Stack>
+      <SurveyNotification />
+    </SurveyProvider>
+  );
+};
 
-  )  
-}
-
-export default RootLayout
-
-
-
-
-                               
+export default RootLayout;
