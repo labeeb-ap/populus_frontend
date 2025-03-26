@@ -26,6 +26,7 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import Feather from 'react-native-vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import WeatherCard from '../../components/WeatherCard';
 
 const COLORS = {
   primary: '#1F3A93',
@@ -333,6 +334,7 @@ const WeatherWidget = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
   
 
   // Animated values for interaction feedback
@@ -632,11 +634,22 @@ const WeatherWidget = () => {
       </View>
     );
   };
+  const Header = () => {
+    return (
+      <View style={headerStyles.container}>
+        <Text style={headerStyles.title}>POPULUS</Text>
+        <TouchableOpacity style={headerStyles.alertButton}>
+          <Icon name="notifications-outline" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderHeader = () => (
-    <>
-      <WeatherWidget />
-    </>
+    <View >
+      <Header />
+      <WeatherCard/>
+    </View>
   );
 
   return (
@@ -696,3 +709,32 @@ const WeatherWidget = () => {
 };
 
 export default Home;
+
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14, // Increased vertical padding
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    width: '100%', // Ensure it takes full width
+    elevation: 2, // Add slight shadow on Android
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginTop: 0,
+  },
+  title: {
+    fontSize: 24, // Increased font size
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    letterSpacing: 0.5, // Slight letter spacing for better legibility
+  },
+  alertButton: {
+    padding: 8, // Increased touchable area
+  },
+});

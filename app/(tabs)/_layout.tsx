@@ -1,19 +1,34 @@
 import { View, Text, Animated, StyleSheet } from 'react-native';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, createContext, useState } from 'react';
 import { Foundation, MaterialCommunityIcons, FontAwesome6 } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import Home from "@/app/(tabs)/home";
 import Profile from "@/app/(tabs)/profile";
 import Map from "@/app/(tabs)/map";
 import Survey from "@/app/(tabs)/survey";
 import { useSurvey } from '../context/SurveyContext';
+import Weather from './weatherscreen';
 
+
+// Define navigation types
+export type RootStackParamList = {
+  TabNavigator: undefined;
+  Weather: undefined;
+};
+// Create Weather Context
+export const WeatherContext = createContext(null)
+
+const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const TabLayout = () => {
+const TabNavigator = () => {
   const { hasPendingSurveys } = useSurvey();
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // State for weather data to be shared across components
+  const [weatherData, setWeatherData] = useState(null);
 
   useEffect(() => {
     if (hasPendingSurveys) {
@@ -71,61 +86,87 @@ const TabLayout = () => {
   );
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => {
-        const routeConfig = tabConfig.find(config => config.name === route.name);
-        const IconComponent = routeConfig ? routeConfig.iconComponent : MaterialCommunityIcons;
+    <WeatherContext.Provider value={{ weatherData, setWeatherData }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => {
+          const routeConfig = tabConfig.find(config => config.name === route.name);
+          const IconComponent = routeConfig ? routeConfig.iconComponent : MaterialCommunityIcons;
 
-        return {
-          tabBarIcon: ({ focused }) => {
-            const icon = focused ? routeConfig?.focusedIcon : routeConfig?.unfocusedIcon;
-            
-            return (
-              <View style={styles.tabIconContainer}>
-                {focused ? (
-                  <View style={styles.activeTabContainer}>
-                    <View style={styles.activeTabIcon}>
-                      <IconComponent name={icon as any} size={22} color="white" />
+          return {
+            tabBarIcon: ({ focused }) => {
+              const icon = focused ? routeConfig?.focusedIcon : routeConfig?.unfocusedIcon;
+              
+              return (
+                <View style={styles.tabIconContainer}>
+                  {focused ? (
+                    <View style={styles.activeTabContainer}>
+                      <View style={styles.activeTabIcon}>
+                        <IconComponent name={icon as any} size={22} color="white" />
+                        {route.name === 'Survey' && hasPendingSurveys && (
+                          <AnimatedNotification />
+                        )}
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.inactiveTabIcon}>
+                      <IconComponent name={icon as any} size={24} color="#555" />
                       {route.name === 'Survey' && hasPendingSurveys && (
                         <AnimatedNotification />
                       )}
                     </View>
-                  </View>
-                ) : (
-                  <View style={styles.inactiveTabIcon}>
-                    <IconComponent name={icon as any} size={24} color="#555" />
-                    {route.name === 'Survey' && hasPendingSurveys && (
-                      <AnimatedNotification />
-                    )}
-                  </View>
-                )}
-              </View>
-            );
-          },
-          tabBarLabel: ({ focused }) => (
-            <Text style={[
-              styles.tabLabel,
-              focused ? styles.tabLabelActive : styles.tabLabelInactive
-            ]}>
-              {route.name.charAt(0).toUpperCase() + route.name.slice(1)}
-            </Text>
-          ),
-          tabBarStyle: styles.tabBar,
-          tabBarItemStyle: styles.tabItem,
-        };
-      }}
-    >
-      {tabConfig.map(tab => (
-        <Tab.Screen
-          key={tab.name}
-          name={tab.name}
-          component={tab.component}
-          options={{ headerShown: false }}
-        />
-      ))}
-    </Tab.Navigator>
+                  )}
+                </View>
+              );
+            },
+            tabBarLabel: ({ focused }) => (
+              <Text style={[
+                styles.tabLabel,
+                focused ? styles.tabLabelActive : styles.tabLabelInactive
+              ]}>
+                {route.name.charAt(0).toUpperCase() + route.name.slice(1)}
+              </Text>
+            ),
+            tabBarStyle: styles.tabBar,
+            tabBarItemStyle: styles.tabItem,
+          };
+        }}
+      >
+        {tabConfig.map(tab => (
+          <Tab.Screen
+            key={tab.name}
+            name={tab.name}
+            component={tab.component}
+            options={{ headerShown: false }}
+          />
+        ))}
+      </Tab.Navigator>
+    </WeatherContext.Provider>
   );
 };
+
+export default function TabLayout() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="TabNavigator" component={TabNavigator} />
+      <Stack.Screen 
+        name="Weather" 
+        component={Weather}
+        options={{
+          headerShown: true,
+          title: 'Weather Details',
+          headerStyle: {
+            backgroundColor: '#f5f5f5',
+          },
+          headerTintColor: '#00538C',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 
 const styles = StyleSheet.create({
   tabIconContainer: {
@@ -214,19 +255,20 @@ const styles = StyleSheet.create({
 
 const tabConfig = [
   {
-    name: "Map",
-    component: Map,
-    focusedIcon: 'home-map-marker',
-    unfocusedIcon: 'home-map-marker',
-    iconComponent: MaterialCommunityIcons
-  },
-  {
     name: "home",
     component: Home,
     focusedIcon: 'home',
     unfocusedIcon: 'home',
     iconComponent: Foundation
   },
+  {
+    name: "Map",
+    component: Map,
+    focusedIcon: 'home-map-marker',
+    unfocusedIcon: 'home-map-marker',
+    iconComponent: MaterialCommunityIcons
+  },
+  
   {
     name: "Survey",
     component: Survey,
@@ -242,5 +284,3 @@ const tabConfig = [
     iconComponent: FontAwesome6
   }
 ];
-
-export default TabLayout;
