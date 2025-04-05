@@ -27,6 +27,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import WeatherCard from '../../components/WeatherCard';
+import { useRouter } from 'expo-router';
 
 const COLORS = {
   primary: '#1F3A93',
@@ -70,7 +71,7 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
-    
+    console.log(decodedToken.presidentId);
     return {
       username: decodedToken.username || 'Anonymous',
       userId: decodedToken.userId || '0000',
@@ -336,6 +337,7 @@ const WeatherWidget = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   
+    const router = useRouter();
 
   // Animated values for interaction feedback
 
@@ -345,7 +347,7 @@ const WeatherWidget = () => {
     };
   
     const handleMessagePress = () => {
-      Alert.alert("Messages", "You clicked the messages button");
+      router.replace("/message");
     };
 
 
@@ -360,7 +362,7 @@ const WeatherWidget = () => {
       // Get user info, including the access value
       const userInfo = await getUserInfoFromToken();
       const access = userInfo.access; // Extract the access value
-
+      console.log(access);
       // Make the axios request with the access parameter
       const response = await axios.get(`${API_URL}/posts/display`, {
           params: {
