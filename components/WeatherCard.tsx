@@ -61,17 +61,21 @@ const WeatherCard = () => {
   const weatherContext = useContext(WeatherContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [alertShown, setAlertShown] = useState(false);
   
   // Add a fallback in case context is undefined
   const { weatherData, setWeatherData } = weatherContext || {};
 
   // Utility function to check for weather alerts
   const checkAndShowAlerts = (data: WeatherData) => {
+    if (alertShown) return;
     const alerts = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
 
     if (temperature > THRESHOLDS.temperature.extreme_high) {
       alerts.push('🌡️ Extreme heat alert! Stay hydrated and avoid outdoor activities.');
+    } else if (temperature < THRESHOLDS.temperature.extreme_low) {
+      alerts.push('🥶 Extremely cold conditions. Wear warm clothing.');
     }
 
     if (humidity > THRESHOLDS.humidity.very_high) {
@@ -87,7 +91,17 @@ const WeatherCard = () => {
     }
 
     if (alerts.length > 0) {
-      Alert.alert('Weather Alerts', alerts.join('\n\n'));
+      Alert.alert(
+        'Weather Alerts', 
+        alerts.join('\n\n'), 
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            setAlertShown(true);
+            console.log('Alerts acknowledged');
+          }
+        }]
+      );
     }
   };
 
@@ -181,8 +195,17 @@ const WeatherCard = () => {
     if (!weatherData) {
       fetchWeatherData();
     } else {
+      // If weather data exists, check for alerts
+      checkAndShowAlerts(weatherData);
       setLoading(false);
     }
+
+    // Reset alert shown status periodically
+    const alertResetTimer = setTimeout(() => {
+      setAlertShown(false);
+    }, 3600000); // Reset every hour
+
+    return () => clearTimeout(alertResetTimer);
   }, [weatherData, weatherContext]);
 
   const handlePress = () => {
